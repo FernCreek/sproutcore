@@ -52,7 +52,8 @@ sc_require('ext/handlebars');
         inverseTemplate: inverse,
         property: property,
         previousContext: this,
-        tagName: (options.hash.tagName || "span")
+        tagName: (options.hash.tagName || "span"),
+        isEscaped: options.hash.escaped
       });
 
       var observer, invoker;
@@ -199,13 +200,13 @@ Handlebars.registerHelper('bindAttr', function(options) {
     // Do not add the attribute when the value is false
     if (value !== NO) {
       // Return the current value, in the form src="foo.jpg"
-      ret.push(attr+'="'+value+'"');
+      ret.push(attr + '="' + value + '"');
     }
   }, this);
 
   // Add the unique identifier
   ret.push('data-handlebars-id="'+dataId+'"');
-  return ret.join(' ');
+  return new Handlebars.SafeString(ret.join(' '));
 });
 
 /**

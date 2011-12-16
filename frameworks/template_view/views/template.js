@@ -1,9 +1,9 @@
+sc_require("handlebars");
 sc_require("ext/handlebars");
 sc_require("ext/handlebars/bind");
 sc_require("ext/handlebars/collection");
 sc_require("ext/handlebars/localization");
 sc_require("ext/handlebars/view");
-sc_require("views/view");
 
 // Global hash of shared templates. This will automatically be populated
 // by the build tools so that you can store your Handlebars templates in
@@ -109,11 +109,17 @@ SC.TemplateView = SC.CoreView.extend(
     @param {SC.RenderContext} context the render context
   */
   render: function(context) {
-    var template = this.get('template');
+    var data,
+        output,
+        template = this.get('template'),
+        templateContext = this.get('context');
 
     this._didRenderChildViews = YES;
 
-    context.push(template(this.get('context'), null, null, { view: this, isRenderData: true }));
+    data = { view: this, isRenderData: true };
+    output = template(templateContext, { data: data });
+
+    context.push(output);
   },
 
   // in TemplateView, updating is handled by observers created by helpers in the

@@ -1,3 +1,5 @@
+sc_require('handlebars');
+
 /**
   Prepares the Handlebars templating library for use inside SproutCore's view
   system.
@@ -33,28 +35,50 @@ SC.Handlebars.JavaScriptCompiler.prototype.compiler = SC.Handlebars.JavaScriptCo
 
 SC.Handlebars.JavaScriptCompiler.prototype.nameLookup = function(parent, name, type) {
   if (type === 'context') {
-    return "SC.get(" + parent + ", " + this.quotedString(name) + ");";
+    return "SC.get(" + parent + ", " + this.quotedString(name) + ")";
   } else {
     return Handlebars.JavaScriptCompiler.prototype.nameLookup.call(this, parent, name, type);
   }
 };
 
+/**
+  Rewrite simple mustaches from {{foo}} to {{bind "foo"}}. This means that all simple
+  mustaches in SproutCore's Handlebars will also set up an observer to keep the DOM
+  up to date when the underlying property changes.
+
+  @private
+*/
 SC.Handlebars.Compiler.prototype.mustache = function(mustache) {
   if (mustache.params.length || mustache.hash) {
     return Handlebars.Compiler.prototype.mustache.call(this, mustache);
   } else {
     var id = new Handlebars.AST.IdNode(['bind']);
+
+    // Update the mustache node to include a hash value indicating whether the original node
+    // was escaped. This will allow us to properly escape values when the underlying value
+    // changes and we need to re-render the value.
+    if(mustache.escaped) {
+      mustache.hash = mustache.hash || new Handlebars.AST.HashNode([]);
+      mustache.hash.pairs.push(["escaped", new Handlebars.AST.StringNode("true")]);
+    }
     mustache = new Handlebars.AST.MustacheNode([id].concat([mustache.id]), mustache.hash, !mustache.escaped);
     return Handlebars.Compiler.prototype.mustache.call(this, mustache);
   }
 };
 
+/**
+  The entry point for SproutCore Handlebars. This replaces the default Handlebars.compile and turns on
+  template-local data and String parameters.
+
+  @param {String} string The template to compile
+*/
 SC.Handlebars.compile = function(string) {
   var ast = Handlebars.parse(string);
-  var environment = new SC.Handlebars.Compiler().compile(ast, {data: true, stringParams: true});
-  var ret = new SC.Handlebars.JavaScriptCompiler().compile(environment, {data: true, stringParams: true});
-  ret.rawTemplate = string;
-  return ret;
+  var options = { data: true, stringParams: true };
+  var environment = new SC.Handlebars.Compiler().compile(ast, options);
+  var templateSpec = new SC.Handlebars.JavaScriptCompiler().compile(environment, options, undefined, true);
+
+  return Handlebars.template(templateSpec);
 };
 
 /**
