@@ -934,7 +934,6 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
       // passing the original event here instead that was potentially set from
       // loosing the responder on the inline text editor so that we can
       // use it for the delegate to end editing
-      this.resignFirstResponder();
       this.fieldDidBlur(this._origEvent || evt);
 
       var val = this.get('value');
@@ -969,6 +968,8 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
   },
   
   fieldDidBlur: function(evt) {
+    this.resignFirstResponder(evt);
+    
     if(this.get('commitOnBlur')) this.commitEditing(evt);
     
     // get the pane we hid intercept pane for (if any)
@@ -1094,15 +1095,6 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
   },
   
   /** @private
-    When we loose first responder, ensure that the field has been blurred.
-  */
-  willLoseFirstResponder: function () {
-    if(this.get('focused')) {
-      this.$input().blur();
-    }
-  },
-  
-  /** @private
     In IE, you can't modify functions on DOM elements so we need to wrap the
     call to select() like this.
   */
@@ -1119,9 +1111,8 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     the hint text if needed.
   */
   didLoseKeyResponderTo: function(keyView) {
-    SC.run(function() {
-      this.fieldDidBlur();
-    }, this);
+    var el = this.$input()[0];
+    if (el) el.blur();
     this.invokeLater("scrollToOriginIfNeeded", 100);
   },
   
