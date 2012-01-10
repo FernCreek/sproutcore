@@ -1178,7 +1178,7 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
       // once the event has been processed. I tried with invokeLast , but
       // I guess the field doesn't repaint until js execution finishes and 
       // therefore the field value doesn't update if we don't give it a break.
-      this.invokeLater(this.fieldValueDidChange, 1);
+      this.invokeLater(this.fieldValueDidChange, 10);
     }
 
     return YES;
