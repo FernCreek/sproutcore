@@ -569,14 +569,8 @@ SC.SplitView = SC.View.extend(
     	this.endLiveResize();
     	return YES;
     }
-    
-    var cursor = this.get('thumbViewCursor'), 
-        cloneCursor = SC.clone(cursor),
-        dV= this.get('dividerView');
-    cursor.set('cursorStyle', SC.SYSTEM_CURSOR);
-    dV.set('cursor', cloneCursor);
-    this.set('cursor', cursor);
-    
+
+    this._setCursorStyle();
     return NO;
   },
   
