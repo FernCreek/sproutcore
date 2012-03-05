@@ -694,10 +694,11 @@ Handlebars.SafeString.prototype.toString = function() {
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#x27;",
-    "`": "&#x60;"
+    "`": "&#x60;",
+    "&": "&amp;"
   };
 
-  var badChars = /&(?!\w+;)|[<>"'`]/g;
+  var badChars = /[&<>"'`]/g;
   var possible = /[&<>"'`]/;
 
   var escapeChar = function(chr) {
