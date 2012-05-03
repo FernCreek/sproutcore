@@ -1,22 +1,13 @@
 CHANGE LOG FOR 1.6+
 ===================
 
-Edge
+Seapine SproutCore 1.8.1.1 (May 3, 2012)
 ----------
+* Cherry-picked. SC.TemplateCollectionView was not cleaning up old childView when the view is removed from the DOM. (7c3607cff5)
+* Cherry-picked. Handlebar escaping issue with ampersands (53b504b530).
+* Merged. Fixed SC.TextFieldView instantiating accessory views multiple times (1ea5b86c88).
+* Cherry-picked from 1-8-Stable. Fixing pasting in SC.TextFieldView (a51318bccc).
 
-### CHANGES & FEATURES
-
-* Adds `useUnixTime` attribute to SC.DateTime record attribute handlers.
-* Introduces fixes and enhancements to the media framework (thanks @krotscheck!):
-  - enables live scrubbing
-  - decouples MediaSlider and Audio/Video view
-  - fixes layout rendering by creating a render delegate
-  - adds SC.mediaCapabilities for media capability detection
-  - updates styling to use Chance
-
-### DEPRECATIONS & REMOVALS
-
-### BUG FIXES
 
 1.8.1 - BUG FIXES
 ----------
