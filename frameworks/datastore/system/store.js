@@ -1075,6 +1075,29 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
     You can also optionally specify an id or else it will be pulled from the
     data hash.
 
+    Example:
+
+      MyApp.Record = SC.Record.extend({
+        attrA: SC.Record.attr(String, { defaultValue: 'def' }),
+        isAttrB: SC.Record.attr(Boolean, { key: 'attr_b' }),
+        primaryKey: 'pKey'
+      });
+
+      // If you don't provide a value and have designated a defaultValue, the
+      // defaultValue will be used.
+      MyApp.store.createRecord(MyApp.Record).get('attributes');
+      > { attrA: 'def' }
+
+      // If you use a key on an attribute, you can specify the key name or the
+      // attribute name when creating the record, but if you specify both, only
+      // the key name will be used.
+      MyApp.store.createRecord(MyApp.Record, { isAttrB: YES }).get('attributes');
+      > { attr_b: YES }
+      MyApp.store.createRecord(MyApp.Record, { attr_b: YES }).get('attributes');
+      > { attr_b: YES }
+      MyApp.store.createRecord(MyApp.Record, { isAttrB: NO, attr_b: YES }).get('attributes');
+      > { attr_b: YES }
+
     Note that the record will not yet be saved back to the server.  To save
     a record to the server, call `commitChanges()` on the store.
 
@@ -1085,12 +1108,11 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
     @returns {SC.Record} Returns the created record
   */
   createRecord: function(recordType, dataHash, id) {
-    var primaryKey, storeKey, status, K = SC.Record, changelog, defaultVal, prop,
-        ret;
+    var primaryKey, prototype, storeKey, status, K = SC.Record, changelog, defaultVal, ret;
 
     //initialize dataHash if necessary
     dataHash = (dataHash ? dataHash : {});
-    
+
     // First, try to get an id.  If no id is passed, look it up in the
     // dataHash.
     if (!id && (primaryKey = recordType.prototype.primaryKey)) {
@@ -1120,28 +1142,49 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
     } else if (!id && (status===SC.DESTROYED_CLEAN || status===SC.ERROR)) {
       throw K.BAD_STATE_ERROR;
     }
-    
-    
-    //search for recordAttribute
-    for (prop in recordType.prototype) {
-      
-      if (recordType.prototype[ prop ] && recordType.prototype[ prop ].isRecordAttribute) {
-        //if attribute doesn't exist in dataHash
-        if (!dataHash[ prop ]) {
-          defaultVal = recordType.prototype[ prop ] ? recordType.prototype[ prop ].defaultValue : null;
-          if(SC.typeOf(defaultVal)===SC.T_FUNCTION)
-            dataHash[ prop ] = SC.copy(defaultVal(), YES);
-          else
-            dataHash[ prop ] = SC.copy(defaultVal, YES);
+
+    // Store the dataHash and setup initial status.
+    this.writeDataHash(storeKey, dataHash, K.READY_NEW);
+
+    // Register the recordType with the store.
+    SC.Store.replaceRecordTypeFor(storeKey, recordType);
+    this.dataHashDidChange(storeKey);
+
+    // If the attribute wasn't provided in the dataHash, attempt to insert a
+    // default value.  We have to do this after materializing the record,
+    // because the defaultValue property may be a function that expects
+    // the record as an argument.
+    ret = this.materializeRecord(storeKey);
+    prototype = recordType.prototype;
+    for (var prop in prototype) {
+      var propPrototype = prototype[ prop ];
+      if (propPrototype && propPrototype.isRecordAttribute) {
+        // Use the record attribute key if it is defined.
+        var attrKey = propPrototype.key || prop;
+
+        if (!dataHash.hasOwnProperty(attrKey)) {
+          if (dataHash.hasOwnProperty(prop)) {
+            // If the attribute key doesn't exist but the name does, fix it up.
+            // (i.e. the developer has a record attribute `endDate` with a key
+            // `end_date` on a record and when they created the record they
+            // provided `endDate` not `end_date`)
+            dataHash[ attrKey ] = dataHash[ prop ];
+            delete dataHash[ prop ];
+          } else {
+            // If the attribute doesn't exist in the hash at all, check for a
+            // default value to use instead.
+            defaultVal = propPrototype.defaultValue;
+            if (defaultVal) {
+              if (SC.typeOf(defaultVal)===SC.T_FUNCTION) dataHash[ attrKey ] = SC.copy(defaultVal(ret, attrKey), YES);
+              else dataHash[ attrKey ] = SC.copy(defaultVal, YES);
+            }
+          }
+        } else if (attrKey !== prop && dataHash.hasOwnProperty(prop)) {
+          // If both attrKey and prop are provided, use attrKey only.
+          delete dataHash[ prop ];
         }
       }
     }
-    
-    // add dataHash and setup initial status -- also save recordType
-    this.writeDataHash(storeKey, dataHash, K.READY_NEW);
-    
-    SC.Store.replaceRecordTypeFor(storeKey, recordType);
-    this.dataHashDidChange(storeKey);
 
     // Record is now in a committable state -- add storeKey to changelog
     changelog = this.changelog;
@@ -1154,9 +1197,7 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
       this.invokeLast(this.commitRecords);
     }
 
-    // Finally return materialized record, after we propagate the status to
-    // any aggregate records.
-    ret = this.materializeRecord(storeKey);
+    // Propagate the status to any aggregate records before returning.
     if (ret) ret.propagateToAggregates();
     return ret;
   },
