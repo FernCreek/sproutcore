@@ -81,6 +81,24 @@ module("Forms - FormView", {
         rowLabelMeasuredSize: 70
       })
     });
+
+    // a form with a maxLabelWidth
+    FormWithMaxLabelWidth = SC.FormView.extend({
+      childViews: 'view1 view2'.w(),
+      maxLabelWidth: 100,
+
+      view1: SC.View.extend({
+        isFormRow: YES,
+        hasRowLabel: YES,
+        rowLabelMeasuredSize: 20
+      }),
+
+      view2: SC.View.extend({
+        isFormRow: YES,
+        hasRowLabel: YES,
+        rowLabelMeasuredSize: 50
+      })
+    });
   }
 
 });
@@ -179,6 +197,30 @@ test("FormView - Row label width management", function() {
   equals(form.view2.get('rowLabelSize'), 50, "Second row's rowLabelSize is correct");
 
   // setting labelWidth directly should make FormView always use that
+  form.set('labelWidth', 500);
+  equals(form.view1.get('rowLabelSize'), 500, "First row's rowLabelSize is correct");
+  equals(form.view2.get('rowLabelSize'), 500, "Second row's rowLabelSize is correct");
+});
+
+test("Max label width", function() {
+  SC.RunLoop.begin();
+  var form = FormWithMaxLabelWidth.create();
+  SC.RunLoop.end();
+
+  equals(form.view1.get('rowLabelSize'), 50, "First row's rowLabelSize is correct");
+  equals(form.view2.get('rowLabelSize'), 50, "Second row's rowLabelSize is correct");
+
+  SC.RunLoop.begin();
+  form.view2.set('rowLabelMeasuredSize', 150);
+
+    // row view will have to tell parent, but since these are not real row views:
+  form.rowLabelMeasuredSizeDidChange(form.view2, 150);
+  SC.RunLoop.end();
+
+  equals(form.view1.get('rowLabelSize'), 100, "First row's rowLabelSize is correct");
+  equals(form.view2.get('rowLabelSize'), 100, "Second row's rowLabelSize is correct");
+
+    // setting labelWidth directly should make FormView always use that, even with a maxLabelWidth
   form.set('labelWidth', 500);
   equals(form.view1.get('rowLabelSize'), 500, "First row's rowLabelSize is correct");
   equals(form.view2.get('rowLabelSize'), 500, "Second row's rowLabelSize is correct");

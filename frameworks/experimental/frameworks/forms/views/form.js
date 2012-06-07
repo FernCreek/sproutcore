@@ -179,6 +179,15 @@ SC.FormView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.FormsEd
     @default null
   */
   labelWidth: null,
+
+  /**
+    Sets the maximum label length. The measured label size will not be allowed
+    to grow larger than this.
+
+    @type Number
+    @default null
+  */
+  maxLabelWidth: null,
   
   /**
     Tells the child rows whether they should measure their labels or not.
@@ -193,6 +202,13 @@ SC.FormView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.FormsEd
     
     this.recalculateLabelWidth();
   }.observes('labelWidth'),
+
+  /**
+    Recalculates the label width when the maximum label width changes.
+  */
+  maxLabelWidthDidChange: function() {
+    this.recalculateLabelWidth();
+  }.observes('maxLabelWidth'),
   
   /**
     Propagates the label width to the child rows, finding the measured size if necessary.
@@ -202,7 +218,8 @@ SC.FormView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.FormsEd
       return;
     }
     
-    var ret = this.get("labelWidth"), children = this.get("childViews"), idx, len = children.length, child;
+    var ret = this.get("labelWidth"), children = this.get("childViews"), idx, len = children.length, child,
+        maxLabelWidth = this.get('maxLabelWidth');
     
     // calculate by looping through child views and getting size (if possible and if
     // no label width is explicitly set)
@@ -216,8 +233,13 @@ SC.FormView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.FormsEd
           ret = Math.max(child.get("rowLabelMeasuredSize"), ret);
         }
       }
+
+      if (!SC.none(maxLabelWidth)) {
+        // Constrain to the max label width.
+        ret = Math.min(maxLabelWidth, ret);
+      }
     }
-    
+
     // now set for all children
     if (this._rowLabelSize !== ret) {
       this._rowLabelSize = ret;
