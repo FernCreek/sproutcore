@@ -27,6 +27,7 @@ SC.FormRowView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.Form
 
   fillWidth: YES,
   layoutDirection: SC.LAYOUT_HORIZONTAL,
+  canWrap: NO,
 
   layout: {left: 0, width: 0, height: 0},
 

@@ -95,3 +95,14 @@ test("Creating Form Rows", function() {
   equals(ret.extendedRow, YES, "Row was extended");
   equals(ret._singleField.get('aProperty'), YES, "Property was defined on field");
 });
+
+test("Rows do not wrap", function() {
+  SC.RunLoop.begin();
+  var row = SC.FormRowView.row("the label", SC.View.extend());
+  row = SC.FormRowView.create(row);
+  pane.appendChild(row);
+  row.set('rowLabelSize', 200);
+  SC.RunLoop.end();
+
+  equals(row.numberOfRows, 1, "Row should consist of one row");
+});
