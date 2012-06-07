@@ -1,14 +1,16 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.8.1.1 (May 3, 2012)
+Seapine SproutCore 1.8.2.2 (June 7, 2012)
 ----------
 * Cherry-picked. SC.TemplateCollectionView was not cleaning up old childView when the view is removed from the DOM. (7c3607cff5)
 * Cherry-picked. Handlebar escaping issue with ampersands (53b504b530).
 * Merged. Fixed SC.TextFieldView instantiating accessory views multiple times (1ea5b86c88).
-* Cherry-picked from 1-8-Stable. Fixing pasting in SC.TextFieldView (a51318bccc).
-
-
+* Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (18df857254).
+* Cherry-picked. Added the ability to set CSS classes for the disclosure view label (119442ca8b).
+* Cherry-picked. Fixed bug where SC.FormRowView would wrap if too wide (c12211ce96).
+* Cherry-picked. Added the ability to bind SC.FormRowView's LabelView to a property on the SC.FormView (7503249764).
+* Cherry-picked. Add a maxLabelWidth property to SC.FormView (33d2ac736e).
 
 1.8.2 - BUG FIXES
 ----------
