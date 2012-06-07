@@ -106,3 +106,66 @@ test("Rows do not wrap", function() {
 
   equals(row.numberOfRows, 1, "Row should consist of one row");
 });
+
+test("Label and tooltip", function() {
+  SC.RunLoop.begin();
+  // Fake out a FormView.
+  var form = SC.View.create({
+    isRowDelegate: YES,
+    rowLabelMeasuredSizeDidChange: function() {},
+
+    testRow: null,
+    testRowLabel: "The real label",
+    testRowToolTip: "The tooltip"
+  });
+  var row = SC.FormRowView.row("the unused label", SC.View.extend(), { formKey: "testRow" });
+  row = form.createChildView(SC.FormRowView, row);
+  form.testRow = row;
+  form.appendChild(row);
+  pane.appendChild(form);
+  SC.RunLoop.end();
+
+  equals(form.testRow.labelView.value, "The real label", "Label should come from form view");
+  equals(form.testRow.labelView.toolTip, "The tooltip", "Tooltip should come from form view");
+
+  SC.RunLoop.begin();
+  form.set("testRowLabel", "Updated label");
+  form.set("testRowToolTip", "Updated tooltip");
+  SC.RunLoop.end();
+
+  equals(form.testRow.labelView.value, "Updated label", "Label should update when binding updates");
+  equals(form.testRow.labelView.toolTip, "Updated tooltip", "Tooltip should updated when binding updates");
+});
+
+test("Label and tooltip bindings", function() {
+  SC.RunLoop.begin();
+  // Fake out a FormView.
+  var form = SC.View.create({
+    isRowDelegate: YES,
+    rowLabelMeasuredSizeDidChange: function() {},
+
+    theLabel: "The original label source",
+    theToolTip: "The original tooltip source",
+
+    testRow: null,
+    testRowLabelBinding: ".theLabel",
+    testRowToolTipBinding: ".theToolTip"
+  });
+  var row = SC.FormRowView.row("the unused label", SC.View.extend(), { formKey: "testRow" });
+  row = form.createChildView(SC.FormRowView, row);
+  form.testRow = row;
+  form.appendChild(row);
+  pane.appendChild(form);
+  SC.RunLoop.end();
+
+  equals(form.testRow.labelView.value, "The original label source", "Label should come from form view");
+  equals(form.testRow.labelView.toolTip, "The original tooltip source", "Tooltip should come from form view");
+
+  SC.RunLoop.begin();
+  form.set("theLabel", "Updated label");
+  form.set("theToolTip", "Updated tooltip");
+  SC.RunLoop.end();
+
+  equals(form.testRow.labelView.value, "Updated label", "Label should update when binding updates");
+  equals(form.testRow.labelView.toolTip, "Updated tooltip", "Tooltip should updated when binding updates");
+});

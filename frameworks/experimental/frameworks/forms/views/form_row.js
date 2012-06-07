@@ -43,10 +43,22 @@ SC.FormRowView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.Form
 
   
   /**
-    The text to display next to the row. If undefined, SproutCore will try
-    to set it automatically to the key corresponding to this row in the FormView.
+    The text to display next to the row. If the FormView has a key corresponding
+    to the key for this row + 'Label', the label's value will be bound to it.
+
+    @type String
+    @default undefined
   */
   label: undefined,
+
+  /**
+    The tool tip for the row label. If the FormView has a key corresponding
+    to the key for this row + 'ToolTip', the label's toolTip will be bound to it.
+
+    @type String
+    @default undefined
+  */
+  toolTip: undefined,
   
   /**
     The actual size for the label, as assigned by the parent FormView.
@@ -82,13 +94,35 @@ SC.FormRowView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.Form
   */
   createChildViews: function() {
     // keep array of keys so we can pass on key to child.
-    var cv = SC.clone(this.get('childViews'));
-    
+    var cv = SC.clone(this.get('childViews')),
+        pv = this.get('parentView'),
+        attrs = {},
+        label = this.get('label'),
+        toolTip = this.get('toolTip'),
+        labelKey = this.formKey ? this.formKey + 'Label' : '',
+        toolTipKey = this.formKey ? this.formKey + 'ToolTip' : '',
+        labelBindingKey = labelKey + 'Binding',
+        toolTipBindingKey = toolTipKey + 'Binding';
+
     // add label
     if (this.labelView.isClass) {
-      this.labelView = this.createChildView(this.labelView, {
-        value: this.get('label')
-      });
+      if (!SC.none(label)) {
+        attrs.value = label;
+      }
+      if (!SC.none(toolTip)) {
+        attrs.toolTip = toolTip;
+      }
+
+      this.labelView = this.createChildView(this.labelView, attrs);
+
+      if (pv && pv.get('isRowDelegate')) {
+        if (!SC.empty(labelKey) && (!SC.none(pv[labelKey]) || !SC.none(pv[labelBindingKey]))) {
+          this.labelView.bind('value', pv, labelKey);
+        }
+        if (!SC.empty(toolTipKey) && (!SC.none(pv[toolTipKey]) || !SC.none(pv[toolTipBindingKey]))) {
+          this.labelView.bind('toolTip', pv, toolTipKey);
+        }
+      }
 
       this.labelView.addObserver('measuredSize', this, 'labelSizeDidChange');
       this.labelView.bind('shouldMeasureSize', this, 'shouldMeasureLabel');
