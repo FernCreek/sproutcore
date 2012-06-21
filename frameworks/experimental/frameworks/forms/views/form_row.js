@@ -183,11 +183,24 @@ SC.FormRowView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.Form
   },
   
   rowLabelSizeDidChange: function() {
-    this.get("labelView").adjust({
-      "width": this.get("rowLabelSize")
-    });
-  }.observes("rowLabelSize")
+    var labelView,
+        text,
+        classes,
+        width,
+        height;
 
+    labelView = this.get('labelView');
+    text = this.get('label');
+    classes = labelView.get('classNames');
+    width = this.get('rowLabelSize');
+
+    height = SC.heightForString(text, width, '', classes);
+
+    labelView.adjust({
+      'width': width,
+      'height': height
+    });
+  }.observes('rowLabelSize')
 });
 
 SC.FormRowView.mixin({
@@ -212,7 +225,6 @@ SC.FormRowView.mixin({
   LabelView: SC.LabelView.extend(SC.AutoResize, SC.CalculatesEmptiness, {
     shouldAutoResize: NO, // only change the measuredSize so we can update.
     layout: { left:0, top:0, width: 0, height: 18 },
-    fillHeight: YES,
     classNames: ["sc-form-label"],
     isValue: NO
   })
