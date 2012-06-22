@@ -184,17 +184,28 @@ SC.FormRowView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.Form
   
   rowLabelSizeDidChange: function() {
     var labelView,
+        layer,
         text,
-        classes,
+        style,
         width,
         height;
 
     labelView = this.get('labelView');
+    layer = labelView.get('layer');
+    if (!layer) {
+      return;
+    }
+
     text = this.get('label');
-    classes = labelView.get('classNames');
     width = this.get('rowLabelSize');
 
-    height = SC.heightForString(text, width, '', classes);
+    if (document.defaultView && document.defaultView.getComputedStyle) {
+      style = document.defaultView.getComputedStyle(layer, null);
+    } else {
+      style = layer.currentStyle;
+    }
+
+    height = SC.heightForString(text, width, style);
 
     labelView.adjust({
       'width': width,
