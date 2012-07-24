@@ -199,13 +199,12 @@ SC.FormRowView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.Form
     text = this.get('label');
     width = this.get('rowLabelSize');
 
-    if (document.defaultView && document.defaultView.getComputedStyle) {
-      style = document.defaultView.getComputedStyle(layer, null);
-    } else {
-      style = layer.currentStyle;
-    }
+    // copy the css properties need for string measurement
+    SC.prepareStringMeasurement(layer);
+    style = SC._metricsCalculationElement.style.cssText;
+    SC.teardownStringMeasurement();
 
-    height = SC.heightForString(text, width, style);
+    height = SC.heightForString(text, width, style, '', NO);
 
     labelView.adjust({
       'width': width,
