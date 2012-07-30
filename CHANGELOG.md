@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.8.2.2 (June 7, 2012)
+Seapine SproutCore 1.8.2.3 (July 30, 2012)
 ----------
 * Cherry-picked. SC.TemplateCollectionView was not cleaning up old childView when the view is removed from the DOM. (7c3607cff5)
 * Cherry-picked. Handlebar escaping issue with ampersands (53b504b530).
@@ -11,6 +11,13 @@ Seapine SproutCore 1.8.2.2 (June 7, 2012)
 * Cherry-picked. Fixed bug where SC.FormRowView would wrap if too wide (c12211ce96).
 * Cherry-picked. Added the ability to bind SC.FormRowView's LabelView to a property on the SC.FormView (7503249764).
 * Cherry-picked. Add a maxLabelWidth property to SC.FormView (33d2ac736e).
+* Cherry-picked. Fixed improper usage of resetClassNames (d21dca2e1b).
+* Cherry-picked. Made the disclosure classes more specific to prevent them affecting other buttons (c334dfe3e4).
+* Cherry-picked. Added support to SC.MenuPane for pgUp/pgDown/home/end (57fe371045).
+* Cherry-picked. Fixed text field styling for IE, Opera, and mobile Safari (53c306de7e).
+* Cherry-picked. Update layer position when contentViewFrame changes on touch platforms (bdf93277fa).
+* Cherry-picked. Grow form view labels vertically to allow line-wrapping of label text (9a341027d8).
+* Cherry-picked. Cache the value of isBrowserFocusable, so we can restore it to the original value (2ad6fc488b).
 
 1.8.2 - BUG FIXES
 ----------
