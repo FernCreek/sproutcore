@@ -1324,6 +1324,7 @@ SC.State = SC.Object.extend(
     @returns {Boolean}
   */
   respondsToEvent: function(event) {
+    if (this.get('isDestroyed')) return false;
     if (this._registeredEventHandlers[event]) return false;
     if (SC.typeOf(this[event]) === SC.T_FUNCTION) return true;
     if (this._registeredStringEventHandlers[event]) return true;
