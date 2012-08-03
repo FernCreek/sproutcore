@@ -621,9 +621,7 @@ SC.FlowedLayout = {
     // space.
     //
     position = 0;
-    if (spacerCount === 0 && (align === SC.ALIGN_RIGHT || align === SC.ALIGN_BOTTOM)) {
-      position = row.plan.maximumRowLength - row.rowLength;
-    } else if (spacerCount === 0 && (align === SC.ALIGN_CENTER || align === SC.ALIGN_MIDDLE)) {
+    if (spacerCount === 0 && (align === SC.ALIGN_CENTER || align === SC.ALIGN_MIDDLE)) {
       position = (row.plan.maximumRowLength / 2) - (row.rowLength / 2);
     }
     
@@ -632,7 +630,11 @@ SC.FlowedLayout = {
     // STEP TWO: LOOP + POSITION
     // 
     for (idx = 0; idx < len; idx++) {
-      item = items[idx];
+      if (align === SC.ALIGN_RIGHT || align === SC.ALIGN_BOTTOM) {
+        item = items[len - (idx + 1)];
+      } else {
+        item = items[idx];
+      }
 
       // if this item has fillWidth or fillHeight set, the row should expand
       // laterally
@@ -694,8 +696,7 @@ SC.FlowedLayout = {
   */
   _scfl_applyPlan: function(plan) {
     var rows = plan.rows, rowIdx, rowsLen, row, longestRow = 0, totalSize = 0,
-        items, itemIdx, itemsLen, item, layout, itemSize,
-        
+        items, itemIdx, itemsLen, item, layout, itemSize, align,
         isVertical = plan.isVertical;
     
     rowsLen = rows.length;
@@ -703,8 +704,9 @@ SC.FlowedLayout = {
       row = rows[rowIdx];
       longestRow = Math.max(longestRow, row.rowLength);
       totalSize += row.rowSize;
-      
-      items = row.items; itemsLen = items.length;
+      align = row.plan.align;
+      items = row.items;
+      itemsLen = items.length;
       
       for (itemIdx = 0; itemIdx < itemsLen; itemIdx++) {
         item = items[itemIdx];
@@ -712,12 +714,31 @@ SC.FlowedLayout = {
 
         itemSize = item.fillRow ? row.rowSize : item.itemSize;
 
-        layout = {
-          left: item.spacing.left + (isVertical ? row.position : item.position),
-          top: item.spacing.top + (isVertical ? item.position : row.position),
-          width: isVertical ? itemSize : item.itemLength,
-          height: isVertical ? item.itemLength : itemSize
-        };
+        if (align === SC.ALIGN_RIGHT) {
+          layout = {
+            right: item.spacing.right + (isVertical ? row.position : item.position),
+            top: item.spacing.top + (isVertical ? item.position : row.position),
+            width: isVertical ? itemSize : item.itemLength,
+            height: isVertical ? item.itemLength : itemSize,
+            left: null
+          };
+        } else if (align === SC.ALIGN_BOTTOM) {
+          layout = {
+            left: item.spacing.left + (isVertical ? row.position : item.position),
+            bottom: item.spacing.bottom + (isVertical ? item.position : row.position),
+            width: isVertical ? itemSize : item.itemLength,
+            height: isVertical ? item.itemLength : itemSize,
+            top: null
+          };
+        } else {
+          layout = {
+            left: item.spacing.left + (isVertical ? row.position : item.position),
+            top: item.spacing.top + (isVertical ? item.position : row.position),
+            width: isVertical ? itemSize : item.itemLength,
+            height: isVertical ? item.itemLength : itemSize,
+            right: null
+          };
+        }
         
         layout.width -= item.spacing.left + item.spacing.right;
         layout.height -= item.spacing.top + item.spacing.bottom;
