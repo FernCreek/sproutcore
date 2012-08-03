@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.8.2.3 (July 30, 2012)
+Seapine SproutCore 1.8.2.4 (August 3, 2012)
 ----------
 * Cherry-picked. SC.TemplateCollectionView was not cleaning up old childView when the view is removed from the DOM. (7c3607cff5)
 * Cherry-picked. Handlebar escaping issue with ampersands (53b504b530).
@@ -18,6 +18,8 @@ Seapine SproutCore 1.8.2.3 (July 30, 2012)
 * Cherry-picked. Update layer position when contentViewFrame changes on touch platforms (bdf93277fa).
 * Cherry-picked. Grow form view labels vertically to allow line-wrapping of label text (9a341027d8).
 * Cherry-picked. Cache the value of isBrowserFocusable, so we can restore it to the original value (2ad6fc488b).
+* Cherry-picked. Escape quotes in bindAttr values (e9c5f850df).
+* Cherry-picked. Check isDestroyed in respondsTo to avoid crash (b9f8c524e8).
 
 1.8.2 - BUG FIXES
 ----------
