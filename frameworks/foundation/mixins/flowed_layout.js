@@ -714,32 +714,34 @@ SC.FlowedLayout = {
 
         itemSize = item.fillRow ? row.rowSize : item.itemSize;
 
-        if (align === SC.ALIGN_RIGHT) {
-          layout = {
-            right: item.spacing.right + (isVertical ? row.position : item.position),
-            top: item.spacing.top + (isVertical ? item.position : row.position),
-            width: isVertical ? itemSize : item.itemLength,
-            height: isVertical ? item.itemLength : itemSize,
-            left: null
-          };
-        } else if (align === SC.ALIGN_BOTTOM) {
-          layout = {
-            left: item.spacing.left + (isVertical ? row.position : item.position),
-            bottom: item.spacing.bottom + (isVertical ? item.position : row.position),
-            width: isVertical ? itemSize : item.itemLength,
-            height: isVertical ? item.itemLength : itemSize,
-            top: null
-          };
+        if (align === SC.ALIGN_RIGHT || align === SC.ALIGN_BOTTOM) {
+          if (isVertical) {
+            layout = {
+              left: item.spacing.left + (isVertical ? row.position : item.position),
+              bottom: item.spacing.bottom + (isVertical ? item.position : row.position),
+              width: isVertical ? itemSize : item.itemLength,
+              height: isVertical ? item.itemLength : itemSize,
+              top: undefined
+            };
+          } else {
+            layout = {
+              right: item.spacing.right + (isVertical ? row.position : item.position),
+              top: item.spacing.top + (isVertical ? item.position : row.position),
+              width: isVertical ? itemSize : item.itemLength,
+              height: isVertical ? item.itemLength : itemSize,
+              left: undefined
+            };
+          }
         } else {
           layout = {
             left: item.spacing.left + (isVertical ? row.position : item.position),
             top: item.spacing.top + (isVertical ? item.position : row.position),
             width: isVertical ? itemSize : item.itemLength,
             height: isVertical ? item.itemLength : itemSize,
-            right: null
+            right: undefined
           };
         }
-        
+
         layout.width -= item.spacing.left + item.spacing.right;
         layout.height -= item.spacing.top + item.spacing.bottom;
         

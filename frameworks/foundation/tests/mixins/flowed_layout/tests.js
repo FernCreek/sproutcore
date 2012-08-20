@@ -331,7 +331,7 @@ test("Align right", function() {
     })
   });
 
-  /*var expect = {
+  var expect = {
     wrap: {
       400: [
         { left: 0, top: 0, width: 100, height: 100 },
@@ -359,14 +359,18 @@ test("Align right", function() {
     }
   };
 
-  checkPositions(view, expect);*/
+  checkPositions(view, expect);
 
-  var expect = {
+  SC.RunLoop.begin();
+  view.set('align', SC.ALIGN_RIGHT);
+  SC.RunLoop.end();
+
+  expect = {
     wrap: {
       400: [
-        { right: 0, top: 100, width: 100, height: 100 },
-        { right: 200, top: 0, width: 300, height: 100 },
-        { right: 0, top: 0, width: 200, height: 100 }
+        { right: 300, top: 0, width: 100, height: 100 },
+        { right: 0, top: 0, width: 300, height: 100 },
+        { right: 0, top: 100, width: 200, height: 100 }
       ],
       600: [
         { right: 500, top: 0, width: 100, height: 100 },
@@ -388,16 +392,6 @@ test("Align right", function() {
       ]
     }
   };
-
-  SC.RunLoop.begin();
-  view.set('align', SC.ALIGN_RIGHT);
-  SC.RunLoop.end();
-
-  /*expect.wrap['400'][2].left = 200;
-
-  expect.noWrap['400'][0].left = -200;
-  expect.noWrap['400'][1].left = -100;
-  expect.noWrap['400'][2].left = 200;*/
 
   checkPositions(view, expect);
 });
