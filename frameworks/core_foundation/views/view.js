@@ -960,6 +960,38 @@ SC.CoreView.reopen(
   //
 
   /**
+    A list of properties on the view to translate dynamically into attributes on
+    the view's layer (element).
+
+    When the view is rendered, the value of each property listed in
+    attributeBindings will be inserted in the element.  If the value is a
+    Boolean, the attribute name itself will be inserted.  As well, as the
+    value of any of these properties changes, the layer will update itself
+    automatically.
+
+    This is an easy way to set custom attributes on the View without
+    implementing it through a render or update function.
+
+    For example,
+
+        // ...  MyApp.MyView
+
+        attributeBindings: ['aria-valuenow', 'disabled'],
+
+        'aria-valuenow': function() {
+          return this.get('value');
+        }.property('value').cacheable(), // adds 'aria-valuenow="{value}"' attribute
+
+        disabled: YES, // adds 'disabled="disabled"' attribute
+
+        // ...
+
+    @property {Array}
+  */
+  attributeBindings: null,
+
+
+  /**
     Tag name for the view's outer element.  The tag name is only used when
     a layer is first created.  If you change the tagName for an element, you
     must destroy and recreate the view layer.
@@ -968,16 +1000,39 @@ SC.CoreView.reopen(
   */
   tagName: 'div',
 
-
-
   /**
-    Standard CSS class names to apply to the view's outer element.  This
-    property automatically inherits any class names defined by the view's
-    superclasses as well.
+    Standard CSS class names to apply to the view's outer element.  These class
+    names are used in addition to any defined on the view's superclass.
 
     @property {Array}
   */
   classNames: [],
+
+  /**
+    A list of local property names to translate dynamically into standard
+    CSS class names on your view's layer (element).
+
+    Each entry in the array should take the form "propertyName:css-class".
+    For example, "isRed:my-red-view" will cause the class "my-red-view" to
+    be appended if the property "isRed" is (or becomes) true, and removed
+    if it later becomes false (or null/undefined).
+
+    Optionally, you may provide just the property name, in which case it will
+    be dasherized and used as the class name.  For example, including
+    "isUpsideDown" will cause the view's isUpsideDown property to mediate the
+    class "is-upside-down".
+
+    Instead of a boolean value, your property may return a string, which will
+    be used as the class name for that entry.  Use caution when returning other
+    values; numbers will be appended verbatim and objects will be stringified,
+    leading to unintended results such as class="4" or class="Object object".
+
+    Class names mediated by these bindings are used in addition to any that
+    you've listed in the classNames property.
+
+    @property {Array}
+  */
+  classNameBindings: null,
 
   /**
     Tool tip property that will be set to the title attribute on the HTML

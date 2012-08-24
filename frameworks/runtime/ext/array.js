@@ -30,9 +30,15 @@ SC.mixin(Array.prototype,
       args = [idx, amt].concat(objects) ;
       this.splice.apply(this,args) ;
     }
-
+    
+    // Both arrayContentDidChange and enumerableContentDidChange will invoke
+    // "this.notifyPropertyChange('[]')". To prevent multiple notifications 
+    // these calls are made as grouped property changes.
+    this.beginPropertyChanges();
     this.arrayContentDidChange(idx, amt, len);
-    this.enumerableContentDidChange(idx, amt, len - amt) ;
+    this.enumerableContentDidChange(idx, amt, len - amt);
+    this.endPropertyChanges();
+    
     return this ;
   },
 

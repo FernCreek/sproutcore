@@ -104,6 +104,13 @@ SC.Enumerable = /** @scope SC.Enumerable.prototype */{
     contains only one object, this method should always return that object.
     If your enumerable is empty, this method should return undefined.
 
+    This property is observable if the enumerable supports it.  Examples
+    of enumerables where firstObject is observable include SC.Array,
+    SC.ManyArray and SC.SparseArray.  To implement a custom enumerable where
+    firstObject is observable, see {@link #enumerableContentDidChange}.
+
+    @see #enumerableContentDidChange
+
     @returns {Object} the object or undefined
   */
   firstObject: function() {
@@ -115,10 +122,17 @@ SC.Enumerable = /** @scope SC.Enumerable.prototype */{
     ret = this.nextObject(0, null, context);
     context = SC.Enumerator._pushContext(context);
     return ret ;
-  }.property(),
+  }.property().cacheable(),
 
   /**
     Helper method returns the last object from a collection.
+
+    This property is observable if the enumerable supports it.  Examples
+    of enumerables where lastObject is observable include SC.Array,
+    SC.ManyArray and SC.SparseArray.  To implement a custom enumerable where
+    lastObject is observable, see {@link #enumerableContentDidChange}.
+
+    @see #enumerableContentDidChange
 
     @returns {Object} the object or undefined
   */
@@ -126,7 +140,7 @@ SC.Enumerable = /** @scope SC.Enumerable.prototype */{
     var len = this.get('length');
     if (len===0) return undefined ;
     if (this.objectAt) return this.objectAt(len-1); // support arrays out of box
-  }.property(),
+  }.property().cacheable(),
 
   /**
     Returns a new enumerator for this object.  See SC.Enumerator for
@@ -794,19 +808,25 @@ SC.Reducers = /** @scope SC.Reducers.prototype */ {
 
   /**
     Invoke this method when the contents of your enumerable has changed.
-    This will notify any observers watching for content changes.  If your are
-    implementing an ordered enumerable (such as an array), also pass the
-    start and end values where the content changed so that it can be used to
-    notify range observers.
+    This will notify any observers watching for content changes.  If you are
+    implementing an ordered enumerable (such as an Array), also pass the
+    start and length values so that it can be used to notify range observers.
+    Passing start and length values will also ensures that the computed
+    properties `firstObject` and `lastObject` are updated.
 
-    @param {Number} start optional start offset for the content change
-    @param {Number} length optional length of change
-    @param {Number} delta if you added or removed objects, the delta change
-    @param {Array} addedObjects the objects that were added
-    @param {Array} removedObjects the objects that were removed
+    @param {Number} [start] start offset for the content change
+    @param {Number} [length] length of change
+    @param {Number} [deltas] if you added or removed objects, the delta change
     @returns {Object} receiver
   */
   enumerableContentDidChange: function(start, length, deltas) {
+    // If the start & length are provided, we can also indicate if the firstObject
+    // or lastObject properties changed, thus making them independently observable.
+    if (!SC.none(start)) {
+      if (start === 0) this.notifyPropertyChange('firstObject');
+      if (!SC.none(length) && start + length === this.get('length') - 1) this.notifyPropertyChange('lastObject');
+    }
+
     this.notifyPropertyChange('[]') ;
   },
 
