@@ -1,25 +1,29 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.8.2.4 (August 3, 2012)
+Seapine SproutCore 1.8.2.5 (September 10, 2012)
 ----------
 * Cherry-picked. SC.TemplateCollectionView was not cleaning up old childView when the view is removed from the DOM. (7c3607cff5)
 * Cherry-picked. Handlebar escaping issue with ampersands (53b504b530).
 * Merged. Fixed SC.TextFieldView instantiating accessory views multiple times (1ea5b86c88).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (18df857254).
-* Cherry-picked. Added the ability to set CSS classes for the disclosure view label (119442ca8b).
-* Cherry-picked. Fixed bug where SC.FormRowView would wrap if too wide (c12211ce96).
-* Cherry-picked. Added the ability to bind SC.FormRowView's LabelView to a property on the SC.FormView (7503249764).
-* Cherry-picked. Add a maxLabelWidth property to SC.FormView (33d2ac736e).
-* Cherry-picked. Fixed improper usage of resetClassNames (d21dca2e1b).
-* Cherry-picked. Made the disclosure classes more specific to prevent them affecting other buttons (c334dfe3e4).
-* Cherry-picked. Added support to SC.MenuPane for pgUp/pgDown/home/end (57fe371045).
-* Cherry-picked. Fixed text field styling for IE, Opera, and mobile Safari (53c306de7e).
-* Cherry-picked. Update layer position when contentViewFrame changes on touch platforms (bdf93277fa).
-* Cherry-picked. Grow form view labels vertically to allow line-wrapping of label text (9a341027d8).
-* Cherry-picked. Cache the value of isBrowserFocusable, so we can restore it to the original value (2ad6fc488b).
-* Cherry-picked. Escape quotes in bindAttr values (e9c5f850df).
-* Cherry-picked. Check isDestroyed in respondsTo to avoid crash (b9f8c524e8).
+* Cherry-picked. Fixed bug where SC.FormRowView would wrap if too wide (b9492405a2).
+* Cherry-picked. Added the ability to bind SC.FormRowView's LabelView to a property on the SC.FormView (86fa1364d1).
+* Cherry-picked. Add a maxLabelWidth property to SC.FormView (77a0f1b540).
+* Cherry-picked. Added the ability to set CSS classes for the disclosure view label (14131f942b).
+* Cherry-picked. Fixed improper usage of resetClassNames (c9ecf6462a).
+* Cherry-picked. Made the disclosure classes more specific to prevent them affecting other buttons (229c41a787).
+* Cherry-picked. Revert changes to add labelClassNames (14c87be71b).
+* Cherry-picked. Added support to SC.MenuPane for pgUp/pgDown/home/end (c3248ac703).
+* Cherry-picked. Added menu pane scrolling unit tests (f31e1f957d).
+* Cherry-picked. Fixed text field styling for IE, Opera, and mobile Safari (181e59b388).
+* Cherry-picked. Update layer position when contentViewFrame changes on touch platforms (881d8801ee).
+* Cherry-picked. Grow form view labels vertically to allow line-wrapping of label text (210619c9d3).
+* Cherry-picked. Cache the value of isBrowserFocusable, so we can restore it to the original value (e5d3e459ad).
+* Cherry-picked. Escape quotes in bindAttr values (caae2206c2).
+* Cherry-picked. Check isDestroyed in respondsTo to avoid crash (941fc64812).
+* Cherry-picked. Handle keyDown on SC.Button to move focus (99cdcf983e).
+* Cherry-picked. Set tabindex="-1" when isBrowserFocusable is *not* set (e3085bdd1c).
 
 1.8.2 - BUG FIXES
 ----------
