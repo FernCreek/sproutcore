@@ -93,7 +93,7 @@ SC.SegmentView = SC.View.extend(SC.Control,
   supportFocusRing: NO,
 
   // TODO: isDefault, isCancel, value not really used by render delegate
-  displayProperties: ['icon', 'displayTitle', 'value', 'displayToolTip', 'isDefault', 'isCancel', 'width', 'isSegment','isFirstSegment', 'isMiddleSegment', 'isLastSegment', 'isOverflowSegment', 'index', 'layoutDirection'],
+  displayProperties: ['icon', 'displayTitle', 'value', 'displayToolTip', 'isDefault', 'isCancel', 'width', 'isSegment','isFirstSegment', 'isMiddleSegment', 'isLastSegment', 'isOverflowSegment', 'index', 'layoutDirection', 'escapeHTML'],
 
   /**
     @type String
