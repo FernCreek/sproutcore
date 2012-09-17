@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.8.2.5 (September 10, 2012)
+Seapine SproutCore 1.8.2.6 (September 17, 2012)
 ----------
 * Cherry-picked. SC.TemplateCollectionView was not cleaning up old childView when the view is removed from the DOM. (7c3607cff5)
 * Cherry-picked. Handlebar escaping issue with ampersands (53b504b530).
@@ -16,6 +16,7 @@ Seapine SproutCore 1.8.2.5 (September 10, 2012)
 * Cherry-picked. Revert changes to add labelClassNames (14c87be71b).
 * Cherry-picked. Added support to SC.MenuPane for pgUp/pgDown/home/end (c3248ac703).
 * Cherry-picked. Added menu pane scrolling unit tests (f31e1f957d).
+* Cherry-picked. Fix incorrect reference to menu scroll view (dd9bba3977).
 * Cherry-picked. Fixed text field styling for IE, Opera, and mobile Safari (181e59b388).
 * Cherry-picked. Update layer position when contentViewFrame changes on touch platforms (881d8801ee).
 * Cherry-picked. Grow form view labels vertically to allow line-wrapping of label text (210619c9d3).
@@ -24,6 +25,9 @@ Seapine SproutCore 1.8.2.5 (September 10, 2012)
 * Cherry-picked. Check isDestroyed in respondsTo to avoid crash (941fc64812).
 * Cherry-picked. Handle keyDown on SC.Button to move focus (99cdcf983e).
 * Cherry-picked. Set tabindex="-1" when isBrowserFocusable is *not* set (e3085bdd1c).
+* Cherry-picked. Add escapeHTML to displayProperties in SegmentView (3df0455ea0).
+* Cherry-picked. Fix keypress handling in IE8 and Opera (c931e08c23).
+* Cherry-picked. Call _fixupTextLayout when hint shown so the right line-height is applied (d9fb17d4b3).
 
 1.8.2 - BUG FIXES
 ----------
