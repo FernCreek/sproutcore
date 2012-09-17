@@ -1027,6 +1027,7 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     }
     else {
       this.$('.hint').removeClass('sc-hidden');
+      this._fixupTextLayout();
     }
   }.observes('value'),
 
