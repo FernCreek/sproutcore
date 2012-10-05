@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.8.2.6 (September 17, 2012)
+Seapine SproutCore 1.8.2.7 (October 5, 2012)
 ----------
 * Cherry-picked. SC.TemplateCollectionView was not cleaning up old childView when the view is removed from the DOM. (7c3607cff5)
 * Cherry-picked. Handlebar escaping issue with ampersands (53b504b530).
@@ -28,6 +28,10 @@ Seapine SproutCore 1.8.2.6 (September 17, 2012)
 * Cherry-picked. Add escapeHTML to displayProperties in SegmentView (3df0455ea0).
 * Cherry-picked. Fix keypress handling in IE8 and Opera (c931e08c23).
 * Cherry-picked. Call _fixupTextLayout when hint shown so the right line-height is applied (d9fb17d4b3).
+* Cherry-picked. Show text cursor when over hint (06e7c0cb2b).
+* Cherry-picked. Notify status change only for parent record (92dba3102d).
+* Cherry-picked. Return null if treeItemChildren length is 0 (195daaedec).
+* Cherry-picked. Add ie10 class (4334f1e1b0).
 
 1.8.2 - BUG FIXES
 ----------
