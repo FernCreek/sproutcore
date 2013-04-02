@@ -637,7 +637,7 @@ SC.ButtonView = SC.View.extend(SC.Control,
       this._action(evt);
     } else if (!this._isFocused && (buttonBehavior!==SC.PUSH_BEHAVIOR)) {
       this._isFocused = YES ;
-      this.becomeFirstResponder();
+      this.becomeFirstResponder(evt);
     }
 
     return YES;
@@ -689,7 +689,7 @@ SC.ButtonView = SC.View.extend(SC.Control,
       this._action(touch);
     } else if (!this._isFocused && (buttonBehavior!==SC.PUSH_BEHAVIOR)) {
       this._isFocused = YES ;
-      this.becomeFirstResponder();
+      this.becomeFirstResponder(touch);
     }
 
     // don't want to do whatever default is...
@@ -733,7 +733,7 @@ SC.ButtonView = SC.View.extend(SC.Control,
      if(!this.get('isEnabled')) return YES;
     if (evt.which === 9 || evt.keyCode === 9) {
       var view = evt.shiftKey ? this.get('previousValidKeyView') : this.get('nextValidKeyView');
-      if(view) view.becomeFirstResponder();
+      if(view) view.becomeFirstResponder(evt);
       else evt.allowDefault();
       return YES ; // handled
     }

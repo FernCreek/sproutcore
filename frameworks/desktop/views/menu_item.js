@@ -467,7 +467,7 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
 
     // Become first responder to show highlight
     if (this.get('isEnabled')) {
-      this.becomeFirstResponder();
+      this.becomeFirstResponder(evt);
     }
 
     if(this.get('hasSubMenu')) {

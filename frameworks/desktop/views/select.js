@@ -702,7 +702,7 @@ SC.SelectView = SC.ButtonView.extend(
     if (!SC.empty(itemIdx) && itemIdx > -1) {
     // if there is an item selected, make it the first responder
       customView = menu.menuItemViewForContentIndex(itemIdx);
-      if (customView) { customView.becomeFirstResponder(); }
+      if (customView) { customView.becomeFirstResponder(evt); }
     }
 
     this.set('isActive', YES);
@@ -776,7 +776,7 @@ SC.SelectView = SC.ButtonView.extend(
     if (!this.get('isEnabled')) return YES ; // handled event, but do nothing
     this.set('isActive', YES);
     this._isMouseDown = YES;
-    this.becomeFirstResponder() ;
+    this.becomeFirstResponder(evt) ;
     this._action() ;
     return YES ;
   },
