@@ -193,6 +193,48 @@ SC._object_extend = function _object_extend(base, ext, proto) {
       if (value.isEnhancement) {
         value = SC._enhance(base[key] || K, value);
       }
+
+      if (value.isMemoized) {
+        value = (function(fn, maxMemoSize) {
+          var memo = {},
+              memoSize = 0,
+              slice = Array.prototype.slice,
+              memoFn;
+          memoFn = function() {
+            var ret,
+                args = slice.call(arguments),
+                guid,
+                i,
+                memoVal;
+
+            if (maxMemoSize > 0 && memoSize > maxMemoSize) {
+              // exceeded maxMemoSize, clear the cache
+              // TODO: would be much better to just start overwriting
+              // old value, but this is simpler for now.
+              memo = {};
+              memoSize = 0;
+            }
+
+            memoVal = memo;
+            for (i = 0; i < args.length; ++i) {
+              guid = SC.guidFor(args[i]);
+              if (!memoVal[guid]) { memoVal[guid] = {}; }
+              memoVal = memoVal[guid];
+            }
+            if (!SC.none(memoVal['ret'])) {
+              ret = memoVal['ret'];
+            } else {
+              ret = fn.apply(this, args);
+              memoVal['ret'] = ret;
+              memoSize++;
+            }
+
+            return ret;
+          };
+          memoFn.fn = fn;
+          return memoFn;
+        })(value, value.maxMemoSize || 0);
+      }
     }
 
     // copy property

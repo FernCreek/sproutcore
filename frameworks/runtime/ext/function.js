@@ -184,6 +184,16 @@ SC.mixin(Function.prototype,
   */
   observes: function(propertyPaths) {
     return SC.Function.observes(this, arguments);
+  },
+
+  /**
+    Indicates that the function should have a memoization cache.
+
+    @param {Number} maxMemoSize maximum size of the cache
+    @returns {Function} receiver, useful for chaining calls.
+  */
+  memoize: function(maxMemoSize) {
+    return SC.Function.memoize(this, maxMemoSize);
   }
 
 });

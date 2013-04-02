@@ -71,6 +71,15 @@ SC.Function = /** @scope SC.Function.prototype */{
       }
     }
     return fn ;
+  },
+
+  /**
+    @see Function.prototype.memoize
+  */
+  memoize: function(fn, maxMemoSize) {
+    fn.isMemoized = true;
+    fn.maxMemoSize = (maxMemoSize === undefined) ? 50 : maxMemoSize;
+    return fn;
   }
 
 };
