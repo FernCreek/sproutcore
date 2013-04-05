@@ -199,7 +199,31 @@ SC._object_extend = function _object_extend(base, ext, proto) {
           var memo = {},
               memoSize = 0,
               slice = Array.prototype.slice,
+              memoReturnVal = '__MEMOIZE_RETURN_VALUE__',
+              memoTraversalFn,
               memoFn;
+
+          memoTraversalFn = function(memo, args) {
+            var memoVal = memo,
+                i,
+                arg,
+                argType,
+                guid;
+            for (i = 0; i < args.length; ++i) {
+              arg = args[i];
+              argType = SC.typeOf(arg);
+              if (argType === SC.T_NUMBER || argType === SC.T_STRING) {
+                // avoid blowing up the string/number guid caches
+                guid = arg;
+              } else {
+                guid = SC.guidFor(arg);
+              }
+              if (!memoVal[guid]) { memoVal[guid] = {}; }
+              memoVal = memoVal[guid];
+            }
+            return memoVal;
+          };
+
           memoFn = function() {
             var ret,
                 args = slice.call(arguments),
@@ -207,31 +231,26 @@ SC._object_extend = function _object_extend(base, ext, proto) {
                 i,
                 memoVal;
 
-            if (maxMemoSize > 0 && memoSize > maxMemoSize) {
-              // exceeded maxMemoSize, clear the cache
-              // TODO: would be much better to just start overwriting
-              // old value, but this is simpler for now.
-              memo = {};
-              memoSize = 0;
-            }
+            memoVal = memoTraversalFn(memo, args);
+            if (!memo.hasOwnProperty('ret')) {
+              if (maxMemoSize > 0 && memoSize + 1 > maxMemoSize) {
+                // will exceed maxMemoSize, clear the cache
+                // TODO: would be much better to just start overwriting
+                // old value, but this is simpler for now.
+                memo = {};
+                memoSize = 0;
+                memoVal = memoTraversalFn(memo, args);
+              }
 
-            memoVal = memo;
-            for (i = 0; i < args.length; ++i) {
-              guid = SC.guidFor(args[i]);
-              if (!memoVal[guid]) { memoVal[guid] = {}; }
-              memoVal = memoVal[guid];
-            }
-            if (!SC.none(memoVal['ret'])) {
-              ret = memoVal['ret'];
-            } else {
               ret = fn.apply(this, args);
-              memoVal['ret'] = ret;
+              memoVal[memoReturnVal] = ret;
               memoSize++;
+            } else {
+              ret = memoVal[memoReturnVal];
             }
 
             return ret;
           };
-          memoFn.fn = fn;
           return memoFn;
         })(value, value.maxMemoSize || 0);
       }
