@@ -117,17 +117,17 @@ SC.FormRowView = SC.View.extend(SC.FlowedLayout, SC.CalculatesEmptiness, SC.Form
 
       if (pv && pv.get('isRowDelegate')) {
         if (!SC.empty(labelKey) && (!SC.none(pv[labelKey]) || !SC.none(pv[labelBindingKey]))) {
-          this.bind('label', pv, labelKey);
+          this.bind('label', SC.Binding.from(labelKey, pv).oneWay());
         }
         if (!SC.empty(toolTipKey) && (!SC.none(pv[toolTipKey]) || !SC.none(pv[toolTipBindingKey]))) {
-          this.bind('toolTip', pv, toolTipKey);
+          this.bind('toolTip', SC.Binding.from(toolTipKey, pv).oneWay());
         }
       }
-      this.labelView.bind('value', this, 'label');
-      this.labelView.bind('toolTip', this, 'toolTip');
+      this.labelView.bind('value', SC.Binding.from('label', this).oneWay());
+      this.labelView.bind('toolTip', SC.Binding.from('toolTip', this).oneWay());
 
       this.labelView.addObserver('measuredSize', this, 'labelSizeDidChange');
-      this.labelView.bind('shouldMeasureSize', this, 'shouldMeasureLabel');
+      this.labelView.bind('shouldMeasureSize', SC.Binding.from('shouldMeasureLabel', this).oneWay());
       this.get('childViews').unshift(this.labelView);
     }
     
