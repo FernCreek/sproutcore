@@ -429,6 +429,8 @@ SC.Observable = /** @scope SC.Observable.prototype */{
     @returns {SC.Observable}
   */
   propertyDidChange: function(key,value, _keepCache) {
+    if (!this._observableInited) this.initObservable();
+
     this._kvo_revision = (this._kvo_revision || 0) + 1;
     var level = this._kvo_changeLevel || 0,
         cachedep, idx, dfunc, func,
@@ -485,8 +487,8 @@ SC.Observable = /** @scope SC.Observable.prototype */{
     var suspended = SC.Observers.isObservingSuspended;
     if ((level > 0) || suspended) {
       var changes = this._kvo_changes ;
-      if (!changes) changes = this._kvo_changes = SC.CoreSet.create() ;
-      changes.add(key) ;
+      if (!changes) changes = this._kvo_changes = this._kvo_changes_pool[this._kvo_changes_idx ^= 1];
+      changes.push(key);
 
       if (suspended) {
         if (log) SC.Logger.log("%@%@: will not notify observers because observing is suspended".fmt(SC.KVO_SPACES,this));
@@ -887,6 +889,9 @@ SC.Observable = /** @scope SC.Observable.prototype */{
       if (this._observableInited) return ;
       this._observableInited = YES ;
 
+      this._kvo_changes_pool = [[],[]];
+      this._kvo_changes_idx = 1;
+
       var loc, keys, key, value, observer, propertyPaths, propertyPathsLength,
           len, ploc, path, dotIndex, root, propertyKey, keysLen;
 
@@ -1084,7 +1089,7 @@ SC.Observable = /** @scope SC.Observable.prototype */{
       var log = SC.LOG_OBSERVERS && !(this.LOG_OBSERVING===NO),
           observers, changes, dependents, starObservers, idx, keys, rev,
           members, membersLength, member, memberLoc, target, method, loc, func,
-          context, spaces, cache ;
+          context, spaces, cache, duplicates, len;
 
       if (log) {
         spaces = SC.KVO_SPACES = (SC.KVO_SPACES || '') + '  ';
@@ -1105,17 +1110,18 @@ SC.Observable = /** @scope SC.Observable.prototype */{
 
         // save the current set of changes and swap out the kvo_changes so that
         // any set() calls by observers will be saved in a new set.
-        if (!changes) changes = SC.CoreSet.create() ;
+        if (!changes) changes = [];
         this._kvo_changes = null ;
 
         // Add the passed key to the changes set.  If a '*' was passed, then
         // add all keys in the observers to the set...
         // once finished, clear the key so the loop will end.
         if (key === '*') {
-          changes.add('*') ;
-          changes.addEach(this._kvo_for('_kvo_observed_keys', SC.CoreSet));
-
-        } else if (key) changes.add(key) ;
+          changes.push('*');
+          changes.pushObjects(this._kvo_for('_kvo_observed_keys', SC.CoreSet));
+        } else if (key) {
+          changes.push(key);
+        }
 
         // Now go through the set and add all dependent keys...
         if (dependents = this._kvo_dependents) {
@@ -1123,7 +1129,7 @@ SC.Observable = /** @scope SC.Observable.prototype */{
           // NOTE: each time we loop, we check the changes length, this
           // way any dependent keys added to the set will also be evaluated...
           for(idx=0;idx<changes.length;idx++) {
-            key = changes[idx] ;
+            key = changes[idx];
             keys = dependents[key] ;
 
             // for each dependent key, add to set of changes.  Also, if key
@@ -1135,7 +1141,7 @@ SC.Observable = /** @scope SC.Observable.prototype */{
               cache = this._kvo_cache;
               if (!cache) cache = this._kvo_cache = {};
               while(--loc >= 0) {
-                changes.add(key = keys[loc]);
+                changes.push(key = keys[loc]);
                 if (func = this[key]) {
                   this[func.cacheKey] = undefined;
                   cache[func.cacheKey] = cache[func.lastSetValueKey] = undefined;
@@ -1145,9 +1151,13 @@ SC.Observable = /** @scope SC.Observable.prototype */{
           } // for(idx...
         } // if (dependents...)
 
+        duplicates = {};
         // now iterate through all changed keys and notify observers.
-        while(changes.length > 0) {
-          key = changes.pop() ; // the changed key
+        for (idx = 0, len = changes.length; idx < len; ++idx) {
+          key = changes[idx];  // the changed key
+          // detect duplicates in the changes "set"
+          if (duplicates[key]) { continue; }
+          duplicates[key] = true;
 
           // find any observers and notify them...
           observers = this[SC.keyFor('_kvo_observers', key)];
@@ -1232,7 +1242,7 @@ SC.Observable = /** @scope SC.Observable.prototype */{
         } // while(changes.length>0)
 
         // changes set should be empty. release it for reuse
-        if (changes) changes.destroy() ;
+        changes.length = 0;
 
         // key is no longer needed; clear it to avoid infinite loops
         key = null ;
@@ -1501,6 +1511,8 @@ SC.Observable = /** @scope SC.Observable.prototype */{
       @returns {SC.Observable}
     */
     notifyPropertyChange: function(key, value) {
+      if (!this._observableInited) this.initObservable() ;
+
       this.propertyWillChange(key) ;
       this.propertyDidChange(key, value) ;
       return this;
