@@ -692,21 +692,52 @@ SC.mixin(/** @scope window.SC.prototype */ {
     @returns {Array} array with [object, property] if found or null
   */
   tupleForPropertyPath: function(path, root) {
+    var key,
+        stopAt,
+        cached,
+        vec,
+        loc,
+        nextDotAt,
+        key2;
+
     // if passed nothing, return nothing.
     if (SC.none(path)) return null;
 
     // if the passed path is itself a tuple, return it
-    if (typeof path === "object" && (path instanceof Array)) return path ;
+    if (typeof path === "object" && (path instanceof Array)) { return path; }
 
-    // find the key.  It is the last . or first *
-    var key ;
-    var stopAt = path.indexOf('*') ;
-    if (stopAt < 0) stopAt = path.lastIndexOf('.') ;
-    key = (stopAt >= 0) ? path.slice(stopAt+1) : path ;
+    if (!this._sc_tupleCache) { this._sc_tupleCache = {}; }
 
-    // convert path to object.
-    var obj = this.objectForPropertyPath(path, root, stopAt) ;
-    return (obj && key) ? [obj,key] : null ;
+    if (path in this._sc_tupleCache) {
+      cached = this._sc_tupleCache[path];
+      vec = cached.vec;
+      key = cached.key;
+    } else {
+      vec = [];
+      // find the key.  It is the last . or first *
+      stopAt = path.indexOf('*');
+      if (stopAt < 0) { stopAt = path.lastIndexOf('.'); }
+      key = (stopAt >= 0) ? path.slice(stopAt + 1) : path;
+
+      // Inlined from objectForPropertyPath, with slight modifications to
+      // support the caching.
+      loc = 0;
+      while (loc < stopAt) {
+        nextDotAt = path.indexOf('.', loc);
+        if ((nextDotAt < 0) || (nextDotAt > stopAt)) nextDotAt = stopAt;
+        key2 = path.slice(loc, nextDotAt);
+        vec.push(key2);
+        loc = nextDotAt + 1;
+      }
+      this._sc_tupleCache[path] = { vec: vec, key: key };
+    }
+    if (!root) { root = window; }
+    for (loc = 0, stopAt = vec.length; loc < stopAt && root; ++loc) {
+      root = root.get ? root.get(vec[loc]) : root[vec[loc]];
+    }
+    if (loc < stopAt) root = undefined; // hit a dead end. :(
+
+    return (root && key) ? [root, key] : null;
   },
 
   /**
