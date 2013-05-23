@@ -264,17 +264,22 @@ SC.SplitView = SC.View.extend(
         l = views.length,
         view, i;
 
+    this.beginPropertyChanges();
+
     for (i=0; i<l; ++i) {
       if (view = this.get(views[i])) {
-        view = this[views[i]] = this.createChildView(view, {
+        view = this.createChildView(view, {
           layoutView: this,
           rootElementPath: [i]
         });
+        this.set(views[i], view);
         childViews.push(view);
       }
     }
 
     this.set('childViews', childViews);
+
+    this.endPropertyChanges();
     return this;
   },
 

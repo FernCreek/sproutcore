@@ -81,18 +81,16 @@ test("Object not yet instantiated", function() {
   SC.Observers.addObserver('car.make', observer, 'makeDidChange', garage);
   ok(SC.Observers.queue.some(function(el) { return el[1] === observer; }), "The observer should have been queued because the car object is a class, not an instance.");
 
-  // 2. A call to SC.Observers.flush should leave the class in the queue because it's not yet an instance
-  SC.Observers.flush(garage);
-  ok(SC.Observers.queue.some(function(el) { return el[1] === observer; }), "The observer should still be in the queue.");
-
-  // 3. After we instantiate the class, a call to SC.Observers.flush should remove the object from the queue...
-  car = garage.car = car.create({ make: 'Renault' });
+  // 2. A call to SC.Observers.flush should remove the class from the queue and add an observer to hook it up
+  // because it's not yet an instance
   SC.Observers.flush(garage);
   ok(!SC.Observers.queue.some(function(el) { return el[1] === observer; }), "The observer should have been removed from the queue.");
 
-  // 4. ...and the observer should work
+  // 3. After we instantiate the class,  the observer should work
+  garage.set('car', car.create({ make: 'Renault' }));
+  car = garage.get('car');
   car.set('make', 'Ferrari');
-  equals(observer.callCount, 1, "The observer should have been alled once.");
+  equals(observer.callCount, 1, "The observer should have been called once.");
 });
 
 

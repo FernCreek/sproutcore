@@ -198,7 +198,10 @@ SC.TabView = SC.View.extend(
     var childViews  = [], containerView, layout,
         tabLocation = this.get('tabLocation'),
         tabHeight   = this.get('tabHeight'),
-        controlSize = this.get('controlSize');
+        controlSize = this.get('controlSize'),
+        view;
+
+    this.beginPropertyChanges();
 
     if (tabLocation === SC.TOP_LOCATION) {
       layout = { top: tabHeight/2+1, left: 0, right: 0, bottom: 0, border: 1 };
@@ -214,7 +217,9 @@ SC.TabView = SC.View.extend(
       ariaRole: 'tabpanel'
     });
 
-    this.containerView = this.createChildView(containerView) ;
+    view = this.createChildView(containerView);
+    this.set('containerView', view);
+    childViews.push(view);
 
     //  The segmentedView managed by this tab view.  Note that this TabView uses
     //  a custom segmented view.  You can access this view but you cannot change
@@ -224,7 +229,7 @@ SC.TabView = SC.View.extend(
              { height: tabHeight, left: 0, right: 0, top: 0 } :
              { height: tabHeight, left: 0, right: 0, bottom: 0 } ;
 
-    this.segmentedView = this.get('segmentedView').extend({
+    view = this.get('segmentedView').extend({
       layout: layout,
 
       controlSize: controlSize,
@@ -249,12 +254,12 @@ SC.TabView = SC.View.extend(
       }
     });
 
-    this.segmentedView = this.createChildView(this.segmentedView) ;
-
-    childViews.push(this.containerView);
-    childViews.push(this.segmentedView);
+    view = this.createChildView(view) ;
+    this.set('segmentedView', view);
+    childViews.push(view);
 
     this.set('childViews', childViews);
+    this.endPropertyChanges();
     return this;
   },
 

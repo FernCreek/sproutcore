@@ -110,28 +110,108 @@ SC.Observers = {
 
   _TMP_OUT: [],
 
+  //@if(debug)
+  _temporaryObservers: {},
+  //@endif
+
   /**
     Flush the queue.  Attempt to add any saved observers.
   */
   flush: function(object) {
-
     // flush any observers that we tried to setup but didn't have a path yet
-    var oldQueue = this.queue, i,
-        queueLen = oldQueue.length;
+    var oldQueue = this.queue,
+        queueLen = oldQueue.length,
+        newQueue,
+        i,
+        item,
+        tuple,
+        chainedPath,
+        firstChar,
+        dotIdx,
+        starIdx;
 
     if (oldQueue && queueLen > 0) {
-      var newQueue = (this.queue = []) ;
+      newQueue = (this.queue = []) ;
 
       for (i=0; i<queueLen; i++ ) {
-        var item = oldQueue[i];
+        item = oldQueue[i];
         if ( !item ) continue;
 
-        var tuple = SC.tupleForPropertyPath( item[0], item[3] );
+        tuple = SC.tupleForPropertyPath( item[0], item[3] );
         // check if object is observable (yet) before adding an observer
         if( tuple && tuple[0].addObserver ) {
           tuple[0].addObserver( tuple[1], item[1], item[2] );
         } else {
-          newQueue.push( item );
+          // Couldn't find the object, create a temporary observer that will hook up
+          // the real observer when the object becomes available.
+          if (item[0].length) {
+            chainedPath = null;
+            firstChar = item[0][0];
+            if (firstChar === '.') {
+              // '.some.property.path' => convert first '.' to '*'
+              chainedPath = '*' + item[0].slice(1);
+            } else if (firstChar !== '*') {
+              // Can't deal with the case where the path already begins with '*'.
+              // We can't hook up the observer, since if we could, we wouldn't need
+              // to try to hook up the temporary observer.
+
+              // Now handle paths with no leading '.' or '*'.
+              if (item[3]) {
+                // We have a root object, add '*' to the path.
+                starIdx = item[0].indexOf('*');
+                if (starIdx >= 0) {
+                  // Path has a '*' in it, swap it for '.' and add a leading '*'.
+                  chainedPath = '*' + item[0].slice(0, starIdx) + '.' + item[0].slice(starIdx + 1);
+                } else {
+                  // No '*' in path, add a leading '*'.
+                  chainedPath = '*' + item[0];
+                }
+              } else {
+                dotIdx = item[0].indexOf('.');
+                starIdx = item[0].indexOf('*');
+                if (dotIdx >= 0 && starIdx < 0) {
+                  // We have a path with only '.'s in it. Convert the first '.' to '*'.
+                  chainedPath = item[0].slice(0, dotIdx) + '*' + item[0].slice(dotIdx + 1);
+                } else if (dotIdx >= 0 && starIdx > dotIdx) {
+                  // We have a path with '.' followed by '*'.
+                  // Replace first '.' with '*' and first '*' with '.'
+                  chainedPath = item[0].slice(0, dotIdx) + '*' + item[0].slice(dotIdx + 1, starIdx - dotIdx - 1) + '.' + item[0].slice(starIdx + 1);
+                }
+              }
+            }
+            if (chainedPath) {
+              tuple = SC.tupleForPropertyPath(chainedPath, item[3]);
+              if (tuple && tuple[0].addObserver) {
+                (function(tuple, item) {
+                  //@if(debug)
+                  var temporaryPath = chainedPath;
+                  var temporaryObservers = SC.Observers._temporaryObservers;
+                  temporaryObservers[temporaryPath] = (temporaryObservers[temporaryPath] || 0) + 1;
+                  //@endif
+
+                  tuple[0].addObserver(tuple[1], item[1], function tempObserver() {
+                    var innerTuple = SC.tupleForPropertyPath( item[0], item[3] );
+                    if (innerTuple && innerTuple[0].addObserver) {
+                      //@if(debug)
+                      if (--temporaryObservers[temporaryPath] === 0) {
+                        delete temporaryObservers[temporaryPath];
+                      }
+                      //@endif
+
+                      tuple[0].removeObserver(tuple[1], item[1], tempObserver);
+                      innerTuple[0].addObserver(innerTuple[1], item[1], item[2]);
+                    }
+                  });
+                })(tuple, item);
+              } else {
+                // Item not observable, fall back to old way.
+                newQueue.push(item);
+              }
+            } else {
+              // Could not construct a valid path for the temporary observer, fall back to the old way.
+              newQueue.push(item);
+            }
+          }
         }
       }
     }
@@ -156,7 +236,6 @@ SC.Observers = {
       out.length = 0; // reset
       object._kvo_needsRangeObserver = false ;
     }
-
   },
 
   /** @private */

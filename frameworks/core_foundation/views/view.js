@@ -1323,7 +1323,7 @@ SC.CoreView.reopen(
       // createChildView creates the view if necessary, but also sets
       // important properties, such as parentView
       view = this.createChildView(view);
-      if (key) { this[key] = view; } // save on key name if passed
+      if (key) { this.set(key, view); } // save on key name if passed
 
       childViews[idx] = view;
     }

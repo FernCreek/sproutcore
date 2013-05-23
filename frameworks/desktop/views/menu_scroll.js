@@ -580,43 +580,51 @@ SC.MenuScrollView = SC.ScrollView.extend(
     in the regular properties.
   */
   createChildViews: function() {
-    var childViews = [], view, view2, controlSize = this.get('controlSize') ;
+    var childViews = [], view, view2, controlSize = this.get('controlSize');
+
+    this.beginPropertyChanges();
     
     // create the containerView.  We must always have a container view. 
     // also, setup the contentView as the child of the containerView...
     if (SC.none(view = this.containerView)) view = SC.ContainerView;
-    
-    childViews.push(this.containerView = this.createChildView(view, {
+
+    view = this.createChildView(view, {
       contentView: this.contentView
-    }));
+    });
+    this.set('containerView', view);
+    childViews.push(view);
     
     // and replace our own contentView...
-    this.contentView = this.containerView.get('contentView');
+    this.set('contentView', this.containerView.get('contentView'));
     
     // create a vertical scroller 
     if ((view=this.verticalScrollerView) && (view2=this.verticalScrollerView2)) {
       if (this.get('hasVerticalScroller')) {
-        view = this.verticalScrollerView = this.createChildView(view, {
+        view = this.createChildView(view, {
           layout: {top: 0, left: 0, right: 0},
           controlSize: controlSize,
           valueBinding: '*owner.verticalScrollOffset'
-        }) ;
+        });
+        this.set('verticalScrollerView', view);
         childViews.push(view);
-        view2 = this.verticalScrollerView2 = this.createChildView(view2, {
+        view2 = this.createChildView(view2, {
           scrollDown: YES,
           layout: {bottom: 0, left: 0, right: 0 },
           controlSize: controlSize,
           valueBinding: '*owner.verticalScrollOffset'
-        }) ;
+        });
+        this.set('verticalScrollerView2', view2);
         childViews.push(view2);
       } else {
-        this.verticalScrollerView = null ;
-        this.verticalScrollerView2 = null ;
+        this.set('verticalScrollerView', null);
+        this.set('verticalScrollerView2', null);
       }
     }
     
     // set childViews array.
-    this.childViews = childViews ;
+    this.set('childViews', childViews);
+
+    this.endPropertyChanges();
     
     this.contentViewFrameDidChange() ; // setup initial display...
     this.tile() ; // set up initial tiling

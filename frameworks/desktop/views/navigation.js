@@ -62,6 +62,8 @@ SC.NavigationView = SC.WorkspaceView.extend(
   /** @private */
   createChildViews: function() {
     sc_super();
+
+    this.beginPropertyChanges();
     
     // get the content
     var content = this.get("navigationContentView");
@@ -70,10 +72,13 @@ SC.NavigationView = SC.WorkspaceView.extend(
     if (content.isClass) content = this.createChildView(content);
     
     // set internal values
-    this._defaultContent = this.navigationContentView = content;
+    this._defaultContent = content;
+    this.set('navigationContentView', content);
     
     // append to the content view
     this.contentView.appendChild(content);
+
+    this.endPropertyChanges();
   },
   
   /** @private */

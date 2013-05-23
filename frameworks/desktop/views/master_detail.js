@@ -264,12 +264,18 @@ SC.MasterDetailView = SC.View.extend(
     Instantiates master and detail views.
   */
   createChildViews: function() {
+    this.beginPropertyChanges();
+
     var master = this.get("masterView");
-    master = this.masterView = this.createChildView(master);
+    master = this.createChildView(master);
+    this.set('masterView', master);
 
     var detail = this.get("detailView");
-    detail = this.detailView = this.createChildView(detail);
+    detail = this.createChildView(detail);
+    this.set('detailView', detail);
     this.appendChild(detail);
+
+    this.endPropertyChanges();
 
     this.invokeOnce("_scmd_tile");
   },

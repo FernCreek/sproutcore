@@ -56,13 +56,18 @@ SC.WellView = SC.ContainerView.extend(
      with the one in contentLayout.
    */
   createChildViews: function() {
+    this.beginPropertyChanges();
+
     // if contentView is defined, then create the content
-    var view = this.get('contentView') ;
+    var view = this.get('contentView');
     if (view) {
-      view = this.contentView = this.createChildView(view) ;
+      view = this.createChildView(view);
       view.set('layout', this.contentLayout);
-      this.childViews = [view] ;
-    } 
+      this.set('contentView', view);
+      this.set('childViews', [view]);
+    }
+
+    this.endPropertyChanges();
   },
 
   /** @private

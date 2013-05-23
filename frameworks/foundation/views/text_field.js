@@ -1024,7 +1024,7 @@ SC.TextFieldView = SC.FieldView.extend(SC.Editable,
     var hintOnFocus = this.get('hintOnFocus');
     if (!hintOnFocus) return;
 
-    if (this.getFieldValue()) {
+    if (this.get('value')) {
       this.$('.hint').addClass('sc-hidden');
     }
     else {

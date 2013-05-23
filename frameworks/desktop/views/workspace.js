@@ -144,21 +144,31 @@ SC.WorkspaceView = SC.View.extend(
   createChildViews: function() {
     sc_super();
 
+    this.beginPropertyChanges();
+
     var topToolbar = this.get("topToolbar");
     if (topToolbar) {
-      topToolbar = this.topToolbar = this.activeTopToolbar = this.createChildView(topToolbar);
+      topToolbar = this.createChildView(topToolbar);
+      this.set('topToolbar', topToolbar);
+      this.set('activeTopToolbar', topToolbar);
       this.appendChild(topToolbar);
     }
 
     var bottomToolbar = this.get("bottomToolbar");
     if (bottomToolbar) {
-      bottomToolbar = this.bottomToolbar = this.activeBottomToolbar = this.createChildView(bottomToolbar);
+      bottomToolbar = this.createChildView(bottomToolbar);
+      this.set('bottomToolbar', bottomToolbar);
+      this.set('activeBottomToolbar', bottomToolbar);
       this.appendChild(bottomToolbar);
     }
 
     var content = this.get("contentView");
-    content = this.contentView = this.activeContentView = this.createChildView(content);
+    content = this.createChildView(content);
+    this.set('contentView', content);
+    this.set('activeContentView', content);
     this.appendChild(content);
+
+    this.endPropertyChanges();
 
     this.invokeOnce("_scws_tile");
   },
