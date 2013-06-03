@@ -695,7 +695,6 @@ SC.FlowedLayout = {
   _scfl_applyPlan: function(plan) {
     var rows = plan.rows, rowIdx, rowsLen, row, longestRow = 0, totalSize = 0,
         items, itemIdx, itemsLen, item, layout, itemSize,
-
         isVertical = plan.isVertical;
 
     rowsLen = rows.length;
@@ -736,8 +735,8 @@ SC.FlowedLayout = {
 
     this.set('calculatedHeight', isVertical ? longestRow : totalSize);
     this.set('calculatedWidth', isVertical ? totalSize : longestRow);
-    this.set('_scfl_maximumCollapsedRowLength', plan.maximumCollapsedRowLength);
-    this.set('_scfl_totalCollapsedRowSize', plan.totalCollapsedRowSize);
+    this.set('_scfl_maximumCollapsedRowLength', plan.maximumCollapsedRowLength + plan.rowStartPadding + plan.rowEndPadding);
+    this.set('_scfl_totalCollapsedRowSize', plan.totalCollapsedRowSize + plan.planStartPadding + plan.planEndPadding);
 
     this.endPropertyChanges();
   },
