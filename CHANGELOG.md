@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.13 (May 23, 2013)
+Seapine SproutCore 1.9.0.14 (June 4, 2013)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -131,6 +131,12 @@ Seapine SproutCore 1.9.0.13 (May 23, 2013)
 * Cherry-picked. Performance improvements to SC.Observers.flush (e8b5063bef).
 * Cherry-picked. Notify the text field selection changed in the next run loop (4e47dc2bd6).
 * Cherry-picked. Fix issue with SC.SegementedView overflow item layer ids (976a0d6406).
+* Cherry-picked. Ensure all observers are removed when destroyObservable is called (f31d851cc5).
+* Cherry-picked. Include padding in flowed layout row sizes to avoid cutting off content (b61c3020ae).
+* Cherry-picked. Fixes improper implementation of SC.SelectionSet:constrain (fixes #870) (570b102f3e).
+* Cherry-picked. Remove the dependent keys from some SC.MenuItemView properties (7c720535bc).
+* Cherry-picked. Gets rid of deprecated code and warning on IE (f45cf0d9d8).
+* Cherry-picked. Remove element from SC.Event._elements if events for it cannot be found (a9aabb75a6).
 
 1.9.0
 ----------
