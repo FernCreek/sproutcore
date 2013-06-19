@@ -446,6 +446,14 @@ SC.PickerPane = SC.PalettePane.extend(
     return this ;
   },
 
+  /**
+    Reposition the pane when the anchor view or its layout changes
+  */
+  anchorLayoutBinding: SC.Binding.oneWay('*_anchorView.layout'),
+  anchorLayoutDidChange: function() {
+    this.positionPane();
+  }.observes('anchorLayout'),
+
   /** @private
     This method will return ret (x, y, width, height) from a rectangular element
     Notice: temp hack for calculating visible anchor height by counting height
@@ -876,7 +884,7 @@ SC.PickerPane = SC.PalettePane.extend(
 
     if (value === undefined) {
       // Getting the value.
-      anchorView = this._anchorView;
+      anchorView = this.get('_anchorView');
       return anchorView ? anchorView.get('layer') : this._anchorHTMLElement;
     }
     else {
@@ -885,11 +893,11 @@ SC.PickerPane = SC.PalettePane.extend(
         throw "You must set 'anchorElement' to either a view or a DOM element";
       }
       else if (value.isView) {
-        this._anchorView        = value;
+        this.set('_anchorView', value);
         this._anchorHTMLElement = null;
       }
       else {
-        this._anchorView        = null;
+        this.set('_anchorView', null);
         this._anchorHTMLElement = value;
       }
     }
