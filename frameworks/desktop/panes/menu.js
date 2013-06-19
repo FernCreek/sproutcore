@@ -275,7 +275,7 @@ SC.MenuPane = SC.PickerPane.extend(
     this.beginPropertyChanges();
     if (anchorViewOrElement) {
       if (anchorViewOrElement.isView) {
-        this._anchorView = anchorViewOrElement;
+        this.set('_anchorView', anchorViewOrElement);
         this._setupScrollObservers(anchorViewOrElement);
       } else {
         this._anchorHTMLElement = anchorViewOrElement;
