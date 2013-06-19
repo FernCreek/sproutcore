@@ -91,6 +91,8 @@ SC.mixin( /** @scope SC */ {
     elem.innerHTML = str;
     height = elem.clientHeight;
 
+    // push the element offscreen to the top as well, now that we know its height
+    cqElem.css('top', -1 * height);
     elem = null; // don't leak memory
     return height;
   },
