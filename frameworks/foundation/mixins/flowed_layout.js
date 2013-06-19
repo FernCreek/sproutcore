@@ -739,6 +739,10 @@ SC.FlowedLayout = {
     this.set('_scfl_totalCollapsedRowSize', plan.totalCollapsedRowSize + plan.planStartPadding + plan.planEndPadding);
 
     this.endPropertyChanges();
+
+    // Our clipping frame depends on 'calculatedHeight' and 'calculatedWidth'. Since we explicitly set these
+    // values, we need to call to our descendants to notify them of clippingFrame changes.
+    this._sc_view_clippingFrameDidChange();
   },
 
   /**
