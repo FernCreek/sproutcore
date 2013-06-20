@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.14 (June 4, 2013)
+Seapine SproutCore 1.9.0.15 (June 20, 2013)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -137,6 +137,10 @@ Seapine SproutCore 1.9.0.14 (June 4, 2013)
 * Cherry-picked. Remove the dependent keys from some SC.MenuItemView properties (7c720535bc).
 * Cherry-picked. Gets rid of deprecated code and warning on IE (f45cf0d9d8).
 * Cherry-picked. Remove element from SC.Event._elements if events for it cannot be found (a9aabb75a6).
+* Cherry-picked. Adjust heightForString div offscreen (f937ccb100).
+* Cherry-picked. Fix issue with clippingFrame not being properly updated (186db9cf06).
+* Cherry-picked. Ensure menu pane position updates correctly (bfda6c73c7).
+* Cherry-picked. Clean up SC.Benchmark (194360acc5).
 
 1.9.0
 ----------
