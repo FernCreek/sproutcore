@@ -176,7 +176,9 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
   */
   subMenu: function() {
     var parentMenu = this.get('parentMenu'),
-        menuItems = this.getContentProperty('itemSubMenuKey');
+        menuItems = this.getContentProperty('itemSubMenuKey'),
+        menuItemKeyAttrs,
+        menuItemKeys;
 
     this._cleanupPreviousSubMenu();
 
@@ -187,7 +189,15 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
         menuItems.set('parentMenu', parentMenu);
         return menuItems;
       } else {
-        return this._subMenuToDelete = SC.MenuPane.create({
+        // Get menu item keys from parent menu
+        // so submenu uses the same values.
+        menuItemKeyAttrs = {};
+        menuItemKeys = parentMenu.get('menuItemKeys');
+        menuItemKeys.forEach(function (key) {
+          menuItemKeyAttrs[key] = parentMenu.get(key);
+        });
+
+        this._subMenuToDelete = SC.MenuPane.create({
           layout: { width: 200 },
           items: menuItems,
           isModal: NO,
@@ -195,7 +205,9 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
           parentMenu: parentMenu,
           controlSize: parentMenu.get('controlSize'),
           exampleView: parentMenu.get('exampleView')
-        });
+        }, menuItemKeyAttrs);
+
+        return this._subMenuToDelete;
       }
     }
 
