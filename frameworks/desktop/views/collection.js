@@ -1390,7 +1390,11 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
 
       // give the delegate a chance to alter the items
       indexes = del.collectionViewShouldSelectIndexes(this, indexes, extend);
-      if (!indexes || indexes.get('length') === 0) return this; // nothing to do
+      if (!indexes || indexes.get('length') === 0) {
+        // delegate removed all the indexes,
+        // clear the selection
+        indexes = null;
+      }
 
     } else indexes = null;
 
