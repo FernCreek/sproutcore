@@ -121,7 +121,7 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
     @observes content
   */
   subMenu: function() {
-    var content = this.get('content'), menuItems, parentMenu;
+    var content = this.get('content'), menuItems, parentMenu, menuItemKeyAttrs, menuItemKeys;
 
     if (!content) return null;
 
@@ -134,6 +134,14 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
         menuItems.set('parentMenu', parentMenu);
         return menuItems;
       } else {
+        // Get menu item keys from parent menu
+        // so submenu uses the same values.
+        menuItemKeyAttrs = {};
+        menuItemKeys = parentMenu.get('menuItemKeys');
+        menuItemKeys.forEach(function (key) {
+          menuItemKeyAttrs[key] = parentMenu.get(key);
+        });
+
         return SC.MenuPane.create({
           layout: { width: 200 },
           items: menuItems,
@@ -142,7 +150,7 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
           parentMenu: parentMenu,
           controlSize: parentMenu.get('controlSize'),
           exampleView: parentMenu.get('exampleView')
-        });
+        }, menuItemKeyAttrs);
       }
     }
 
