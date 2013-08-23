@@ -436,24 +436,6 @@ SC.Observable = /** @scope SC.Observable.prototype */{
         cachedep, idx, dfunc, func,
         log = SC.LOG_OBSERVERS && (this.LOG_OBSERVING !== NO);
 
-    // If any dependent keys contain this property in their path,
-    // invalidate the cache of the computed property and re-setup chain with
-    // new value.
-    var chains = this._kvo_property_chains;
-    if (chains) {
-      var keyChains = chains[key];
-
-      if (keyChains) {
-        this.beginPropertyChanges();
-        keyChains = SC.clone(keyChains);
-        keyChains.forEach(function(chain) {
-          // Invalidate the property that depends on the changed key.
-          chain.notifyPropertyDidChange();
-        });
-        this.endPropertyChanges();
-      }
-    }
-
     var cache = this._kvo_cache;
     if (cache) {
 
@@ -1163,7 +1145,7 @@ SC.Observable = /** @scope SC.Observable.prototype */{
       var log = SC.LOG_OBSERVERS && !(this.LOG_OBSERVING===NO),
           observers, changes, dependents, starObservers, idx, keys, rev,
           members, membersLength, member, memberLoc, target, method, loc, func,
-          context, spaces, cache, duplicates, len;
+          context, spaces, cache, duplicates, len, chains, keyChains;
 
       if (log) {
         spaces = SC.KVO_SPACES = (SC.KVO_SPACES || '') + '  ';
@@ -1172,6 +1154,9 @@ SC.Observable = /** @scope SC.Observable.prototype */{
 
       // Get any starObservers -- they will be notified of all changes.
       starObservers =  this['_kvo_observers_*'] ;
+
+      // Get property chains.
+      chains = this._kvo_property_chains;
 
       // prevent notifications from being sent until complete
       this._kvo_changeLevel = (this._kvo_changeLevel || 0) + 1;
@@ -1232,6 +1217,21 @@ SC.Observable = /** @scope SC.Observable.prototype */{
           // detect duplicates in the changes "set"
           if (duplicates[key]) { continue; }
           duplicates[key] = true;
+
+          if (chains) {
+            // If any dependent keys contain this property in their path,
+            // invalidate the cache of the computed property and re-setup chain with
+            // new value.
+            keyChains = chains[key];
+
+            if (keyChains) {
+              keyChains = SC.clone(keyChains);
+              keyChains.forEach(function (chain) {
+                // Invalidate the property that depends on the changed key.
+                chain.notifyPropertyDidChange();
+              });
+            }
+          }
 
           // find any observers and notify them...
           observers = this[SC.keyFor('_kvo_observers', key)];
