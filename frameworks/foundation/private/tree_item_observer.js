@@ -315,11 +315,19 @@ SC.TreeItemObserver = SC.Object.extend(SC.Array, SC.CollectionContent, {
 
     The start, amt and delta params should reflect changes to the children
     array, not to the expanded range for the wrapper.
+
+    @param {Number} start the starting index
+    @param {Number} amt the number of items that changed
+    @param {Number} delta the size difference due to the change
+    @param {Boolean} [_skipBranchInvalidation] if true, invalidateBranchObserversAt will not be called. this is used to
+                                               avoid destroying branch observers at the parent levels of the tree.
   */
-  observerContentDidChange: function(start, amt, delta) {
+  observerContentDidChange: function(start, amt, delta, _skipBranchInvalidation) {
 
     // clear caches
-    this.invalidateBranchObserversAt(start);
+    if (!_skipBranchInvalidation) {
+      this.invalidateBranchObserversAt(start);
+    }
     this._objectAtCache = this._outlineLevelCache = null;
     this._disclosureStateCache = null;
     this._contentGroupIndexes = NO;
@@ -337,7 +345,7 @@ SC.TreeItemObserver = SC.Object.extend(SC.Array, SC.CollectionContent, {
 
     if (parent) {
       set = SC.IndexSet.create(this.get('index'));
-      parent._childrenRangeDidChange(parent.get('children'), null, '[]', set);
+      parent._childrenRangeDidChange(parent.get('children'), null, '[]', set, true);
 
     // otherwise, note the enumerable content has changed.  note that we need
     // to convert the passed change to reflect the computed range
@@ -765,8 +773,14 @@ SC.TreeItemObserver = SC.Object.extend(SC.Array, SC.CollectionContent, {
     Called anytime the actual content of the children has changed.  If this
     changes the length property, then notifies the parent that the content
     might have changed.
+    @param {SC.Array} array the children array that changed
+    @param {SC.Object} object the object that changed
+    @param {String} key key that changed
+    @param {SC.IndexSet} indexes indexes that changed
+    @param {Boolean} [_skipBranchInvalidation] if true, invalidateBranchObserversAt will not be called. this is used to
+                                               avoid destroying branch observers at the parent levels of the tree.
   */
-  _childrenRangeDidChange: function(array, objects, key, indexes) {
+  _childrenRangeDidChange: function(array, object, key, indexes, _skipBranchInvalidation) {
     var children = this.get('children'),
         len = children ? children.get('length') : 0,
         min = indexes ? indexes.get('min') : 0,
@@ -774,7 +788,7 @@ SC.TreeItemObserver = SC.Object.extend(SC.Array, SC.CollectionContent, {
         old = this._childrenLen || 0;
 
     this._childrenLen = len; // save for future calls
-    this.observerContentDidChange(min, max-min, len-old);
+    this.observerContentDidChange(min, max-min, len-old, _skipBranchInvalidation);
   },
 
   /**
