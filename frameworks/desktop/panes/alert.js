@@ -437,7 +437,7 @@ SC.AlertPane.mixin(
     var pane = this.create(args), 
         idx = 0, 
         buttons = args.buttons,
-        buttonView, title, toolTip, action, target, themeName,
+        buttonView, layerId, title, toolTip, action, target, themeName,
         isDefault, isCancel, hasDefault, hasCancel;
 
     if(buttons) {
@@ -447,7 +447,8 @@ SC.AlertPane.mixin(
         idx++;
         if(!button) return;
         buttonView = pane.get('button%@'.fmt(idx));
-        
+
+        layerId = button.layerId;
         title = button.title;
         toolTip = button.toolTip;
         action = button.action;
@@ -460,6 +461,7 @@ SC.AlertPane.mixin(
         if (toolTip) buttonView.set('toolTip', toolTip);
         if(action) buttonView.set('customAction'.fmt(idx), action);
         if(target) buttonView.set('customTarget'.fmt(idx), target);
+        if (layerId !== undefined) { buttonView.set('layerId', layerId); }
         if (isDefault !== undefined) { buttonView.set('isDefault', isDefault); }
         if (isCancel !== undefined) { buttonView.set('isCancel', isCancel); }
         buttonView.set('isVisible', !!title);
