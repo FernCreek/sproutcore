@@ -30,7 +30,7 @@ sc_require('system/object');
   @since SproutCore 1.5
 */
 
-SC._PropertyChain = SC.Object.extend(
+SC._PropertyChain = SC.Object.extend(SC.Copyable,
 /** @scope SC.Object.prototype */ {
   /**
     The object represented by this node in the chain.
@@ -72,6 +72,14 @@ SC._PropertyChain = SC.Object.extend(
   nextProperty: null,
 
   /**
+    Whether this node in the chain was preceded by '@each', meaning this property
+    should be watched on every item in the enumerable.
+
+    @property {Boolean}
+  */
+  isAtEach: false,
+
+  /**
     Registers this segment of the chain with the object it represents.
 
     This should be called with the object represented by the previous node in
@@ -84,6 +92,7 @@ SC._PropertyChain = SC.Object.extend(
   activate: function(newObject) {
     var curObject = this.get('object'),
         property  = this.get('property'),
+        isAtEach = this.get('isAtEach'),
         nextObject;
 
     // If no parameter is passed, assume we are the root in the chain
@@ -91,21 +100,29 @@ SC._PropertyChain = SC.Object.extend(
     // paths are always relative.
     if (!newObject) { newObject = this.get('target'); }
 
-    if (curObject && curObject!==newObject) {
+    if (curObject && curObject !== newObject) {
       this.deactivate();
     }
     this.set('object', newObject);
 
     // In the special case of @each, we treat the enumerable as the next
     // property so just skip registering it
-    if (newObject && property!=='@each') {
-      newObject.registerDependentKeyWithChain(property, this);
+    if (newObject) {
+      if (isAtEach) {
+        // We must explicitly call the array version of the function because we only want to use this
+        // version if '@each' was used.
+        SC.CoreArrayPropertyChainSupport.registerDependentKeyWithChain.call(newObject, property, this);
+      } else {
+        newObject.registerDependentKeyWithChain(property, this);
+      }
     }
 
     // now - lookup the object for the next one...
-    if (this.next) {
+    if (this.next && !isAtEach) {
       nextObject = newObject ? newObject.get(property) : undefined;
-      this.next.activate(nextObject);
+      if (nextObject) {
+        this.next.activate(nextObject);
+      }
     }
 
     return this;
@@ -117,13 +134,24 @@ SC._PropertyChain = SC.Object.extend(
     chain changes.
   */
   deactivate: function() {
-    var object   = this.get('object'),
-        property = this.get('property');
+    var object = this.get('object'),
+        property = this.get('property'),
+        isAtEach = this.get('isAtEach');
 
     // If the chain element is not associated with an object,
     // we don't need to deactivate anything.
-    if (object) object.removeDependentKeyWithChain(property, this);
-    if (this.next) this.next.deactivate();
+    if (object) {
+      if (isAtEach) {
+        // We must explicitly call the array version of the function because we only want to use this
+        // version if '@each' was used.
+        SC.CoreArrayPropertyChainSupport.removeDependentKeyWithChain.call(object, property, this);
+      } else {
+        object.removeDependentKeyWithChain(property, this);
+      }
+    }
+    if (this.next && !isAtEach) {
+      this.next.deactivate();
+    }
     return this;
   },
 
@@ -131,8 +159,9 @@ SC._PropertyChain = SC.Object.extend(
     Invalidates the +toInvalidate+ property of the +target+ object.
   */
   notifyPropertyDidChange: function() {
-    var target       = this.get('target'),
+    var target = this.get('target'),
         toInvalidate = this.get('toInvalidate'),
+        isAtEach = this.get('isAtEach'),
         curObj, newObj;
 
     // Tell the target of the chain to invalidate the property
@@ -141,14 +170,34 @@ SC._PropertyChain = SC.Object.extend(
 
     // If there are more dependent keys in the chain, we need
     // to invalidate them and set them up again.
-    if (this.next) {
+    if (this.next && !isAtEach) {
       // Get the new value of the object associated with this node to pass to
       // activate().
       curObj = this.get('object');
-      newObj = curObj.get(this.get('property'));
-
-      this.next.activate(newObj); // reactivate down the line
+      newObj = curObj ? curObj.get(this.get('property')) : undefined;
+      if (newObj) {
+        this.next.activate(newObj); // reactivate down the line
+      }
     }
+  },
+
+  /**
+    Implements SC.Copyable. This is required to prevent 'object' from being copied over,
+    which would break @each property paths that go more than one level deep.
+  */
+  copy: function() {
+    var ret = SC._PropertyChain.create({
+      property: this.get('property'),
+      target: this.get('target'),
+      toInvalidate: this.get('toInvalidate'),
+      nextProperty: this.get('nextProperty'),
+      isAtEach: this.get('isAtEach')
+    });
+    if (this.next) {
+      // Continue copying down the chain.
+      ret.next = this.next.copy();
+    }
+    return ret;
   }
 
   // @if (debug)
@@ -166,30 +215,49 @@ SC._PropertyChain = SC.Object.extend(
 });
 
 SC._PropertyChain.createChain = function(path, target, toInvalidate) {
-  var parts = path.split('.');
-  var len = parts.length,
-      i   = 1;
+  var parts = path.split('.'),
+      len = parts.length,
+      i,
+      isRoot,
+      isAtEach,
+      property,
+      nextProperty,
+      node,
+      root,
+      tail;
 
-  var root = SC._PropertyChain.create({
-    property:     parts[0],
-    target:       target,
-    toInvalidate: toInvalidate,
-    nextProperty: parts[1]
-  });
+  for (i = 0; i < len; ++i) {
+    isRoot = (i === 0);
+    isAtEach = (parts[i] === '@each');
+    if (isAtEach) {
+      // Skip over the @each string.
+      i++;
+    }
 
+    property = parts[i];
+    nextProperty = parts[i + 1];
+    if (nextProperty === '@each') {
+      // Skip over the @each string.
+      nextProperty = parts[i + 2];
+    }
 
-  root.set('length', len);
-  var tail = root;
-
-  while(--len >= 1) {
-    tail = tail.next = SC._PropertyChain.create({
-      property:     parts[i],
-      target:       target,
+    node = SC._PropertyChain.create({
+      property: property,
+      target: target,
       toInvalidate: toInvalidate,
-      nextProperty: parts[++i]
+      nextProperty: nextProperty,
+      isAtEach: isAtEach
     });
 
-    tail.set('length', len);
+    if (tail) {
+      tail.next = node;
+    }
+
+    tail = node;
+
+    if (isRoot) {
+      root = node;
+    }
   }
 
   return root;

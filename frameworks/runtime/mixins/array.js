@@ -540,6 +540,9 @@ SC.CoreArray = /** @lends SC.Array.prototype */ {
 
   arrayContentWillChange: function(start, removedCount, addedCount) {
     this._teardownContentObservers(start, removedCount);
+    if (this._kvo_enumerable_property_chains) {
+      this.teardownEnumerablePropertyChains(this.slice(start, start + removedCount));
+    }
 
     var member, members, membersLen, idx;
     var target, action;
@@ -581,6 +584,9 @@ SC.CoreArray = /** @lends SC.Array.prototype */ {
     }
 
     this._setupContentObservers(start, addedCount);
+    if (this._kvo_enumerable_property_chains) {
+      this.setupEnumerablePropertyChains(this.slice(start, start + addedCount));
+    }
 
     var member, members, membersLen, idx;
     var target, action;
@@ -674,17 +680,15 @@ SC.CoreArray = /** @lends SC.Array.prototype */ {
 
     if (chains) {
       chains.forEach(function(chain) {
-        var idx, len = removedObjects.get('length'),
-            chainGuid = SC.guidFor(chain),
-            clonedChain, item, kvoChainList = '_kvo_enumerable_property_clones';
+        var idx,
+            len = removedObjects.get('length');
 
-        chain.notifyPropertyDidChange();
+        if (len > 0) {
+          chain.notifyPropertyDidChange();
+        }
 
         for (idx = 0; idx < len; idx++) {
-          item = removedObjects.objectAt(idx);
-          clonedChain = item[kvoChainList][chainGuid];
-          clonedChain.deactivate();
-          delete item[kvoChainList][chainGuid];
+          this._removePropertyChainCloneFromItem(chain, removedObjects.objectAt(idx));
         }
       }, this);
     }
@@ -704,11 +708,13 @@ SC.CoreArray = /** @lends SC.Array.prototype */ {
 
     if (chains) {
       chains.forEach(function(chain) {
-        var idx, len = addedObjects.get('length');
+        var idx,
+            len = addedObjects.get('length');
 
-        chain.notifyPropertyDidChange();
+        if (len > 0) {
+          chain.notifyPropertyDidChange();
+        }
 
-        len = addedObjects.get('length');
         for (idx = 0; idx < len; idx++) {
           this._clonePropertyChainToItem(chain, addedObjects.objectAt(idx));
         }
@@ -718,73 +724,51 @@ SC.CoreArray = /** @lends SC.Array.prototype */ {
   },
 
   /**
-    Register a property chain to propagate to enumerable content.
-
-    This will clone the property chain to each item in the enumerable,
-    then save it so that it is automatically set up and torn down when
-    the enumerable content changes.
-
-    @param {String} property the property being listened for on this object
-    @param {SC._PropertyChain} chain the chain to clone to items
-  */
-  registerDependentKeyWithChain: function(property, chain) {
-    // Get the set of all existing property chains that should
-    // be propagated to enumerable contents. If that set doesn't
-    // exist yet, _kvo_for() will create it.
-    var kvoChainList = '_kvo_enumerable_property_chains',
-        chains, item, clone, cloneList;
-
-    chains = this._kvo_for(kvoChainList, SC.CoreSet);
-
-    // Save a reference to the chain on this object. If new objects
-    // are added to the enumerable, we will clone this chain and add
-    // it to the new object.
-    chains.add(chain);
-
-    this.forEach(function(item) {
-      this._clonePropertyChainToItem(chain, item);
-    }, this);
-  },
-
-  /**
     Clones an SC._PropertyChain to a content item.
 
     @param {SC._PropertyChain} chain
     @param {Object} item
+    @private
   */
   _clonePropertyChainToItem: function(chain, item) {
-    var clone        = SC.clone(chain),
-        kvoCloneList = '_kvo_enumerable_property_clones',
-        cloneList;
+    var kvoCloneList = '_kvo_enumerable_property_clones',
+        cloneList = item[kvoCloneList] = item[kvoCloneList] || {},
+        chainGuid = SC.guidFor(chain),
+        clone;
 
-    clone.object = item;
+    // In case setupEnumerablePropertyChains gets called on objects that have already been chained up,
+    // first check that we don't already have a clone for this chain.
+    if (!cloneList[chainGuid]) {
+      clone = SC.clone(chain);
+      cloneList[chainGuid] = clone;
 
-    cloneList = item[kvoCloneList] = item[kvoCloneList] || {};
-    cloneList[SC.guidFor(chain)] = clone;
+      clone.object = item;
+      clone.isAtEach = false;
 
-    clone.activate(item);
+      clone.activate(item);
+    }
   },
 
   /**
-    Removes a dependent key from the enumerable, and tears it down on
-    all content objects.
+    Removes a cloned SC._PropertyChain from a content item.
 
-    @param {String} property
     @param {SC._PropertyChain} chain
+    @param {Object} item
+    @private
   */
-  removeDependentKeyWithChain: function(property, chain) {
-    var kvoChainList = '_kvo_enumerable_property_chains',
-        kvoCloneList = '_kvo_enumerable_property_clones',
-        chains, item, clone, cloneList;
+  _removePropertyChainCloneFromItem: function(chain, item) {
+    var kvoCloneList = '_kvo_enumerable_property_clones',
+        chainGuid = SC.guidFor(chain),
+        cloneList = item[kvoCloneList],
+        clone;
 
-    this.forEach(function(item) {
-      item.removeDependentKeyWithChain(property, chain);
-
-      cloneList = item[kvoCloneList];
-      clone = cloneList[SC.guidFor(chain)];
-
-      clone.deactivate(item);
-    }, this);
+    if (cloneList) {
+      clone = cloneList[chainGuid];
+      if (clone) {
+        clone.deactivate();
+      }
+      delete cloneList[chainGuid];
+    }
   },
 
   /**
@@ -894,6 +878,55 @@ SC.CoreArray = /** @lends SC.Array.prototype */ {
   }
 
 } ;
+
+SC.CoreArrayPropertyChainSupport = {
+  /**
+    Register a property chain to propagate to enumerable content.
+
+    This will clone the property chain to each item in the enumerable,
+    then save it so that it is automatically set up and torn down when
+    the enumerable content changes.
+
+    @param {String} property the property being listened for on this object
+    @param {SC._PropertyChain} chain the chain to clone to items
+  */
+  registerDependentKeyWithChain: function(property, chain) {
+    // Get the set of all existing property chains that should
+    // be propagated to enumerable contents. If that set doesn't
+    // exist yet, _kvo_for() will create it.
+    var kvoChainList = '_kvo_enumerable_property_chains',
+        chains = this._kvo_for(kvoChainList, SC.CoreSet);
+
+    // Save a reference to the chain on this object. If new objects
+    // are added to the enumerable, we will clone this chain and add
+    // it to the new object.
+    chains.add(chain);
+
+    this.forEach(function(item) {
+      this._clonePropertyChainToItem(chain, item);
+    }, this);
+  },
+
+  /**
+    Removes a dependent key from the enumerable, and tears it down on
+    all content objects.
+
+    @param {String} property
+    @param {SC._PropertyChain} chain
+  */
+  removeDependentKeyWithChain: function(property, chain) {
+    var kvoChainList = '_kvo_enumerable_property_chains',
+        chains = this._kvo_for(kvoChainList, SC.CoreSet);
+
+    // Remove the chain from the enumerable so we stop
+    // cloning it to new objects.
+    chains.remove(chain);
+
+    this.forEach(function(item) {
+      this._removePropertyChainCloneFromItem(chain, item);
+    }, this);
+  }
+};
 
 /**
   @namespace

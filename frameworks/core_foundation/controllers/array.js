@@ -418,19 +418,11 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
 
   _scac_arrayContentWillChange: function(start, removed, added) {
     this.arrayContentWillChange(start, removed, added);
-    if (this._kvo_enumerable_property_chains) {
-      var removedObjects = this.slice(start, start+removed);
-      this.teardownEnumerablePropertyChains(removedObjects);
-    }
   },
 
   _scac_arrayContentDidChange: function(start, removed, added) {
     this._scac_cached = NO;
     this.arrayContentDidChange(start, removed, added);
-    if (this._kvo_enumerable_property_chains) {
-      var addedObjects = this.slice(start, start+added);
-      this.setupEnumerablePropertyChains(addedObjects);
-    }
     this.updateSelectionAfterContentChange();
   },
 
