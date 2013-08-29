@@ -309,7 +309,7 @@ test("should invalidate computed property once per changed key", function() {
       }
 
       return this.getEach('name').join(' ');
-    }.property('@each.name')
+    }.property('@each.name').cacheable()
   });
 
   try {
@@ -320,9 +320,9 @@ test("should invalidate computed property once per changed key", function() {
     SC.run();
     SC.run(function() { peopleWatcher.set('names', 'foo bar baz'); });
     equals(setCalls, 1, "calls set once");
-    // equals(getCalls, 3, "calls get three times");
-    // TODO: Figure out what the right number is. Recent optimizations have reduced
-    // it significantly, but we can't get it below 7.
+    // called six time: once on the binding connect,
+    // and once for each item in the array (each one notifies the change).
+    equals(getCalls, 6, "calls get six times");
   } finally {
     window.peopleController = undefined;
   }
