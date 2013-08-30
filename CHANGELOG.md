@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.15 (June 20, 2013)
+Seapine SproutCore 1.9.0.16 (August 29, 2013)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -141,6 +141,15 @@ Seapine SproutCore 1.9.0.15 (June 20, 2013)
 * Cherry-picked. Fix issue with clippingFrame not being properly updated (186db9cf06).
 * Cherry-picked. Ensure menu pane position updates correctly (bfda6c73c7).
 * Cherry-picked. Clean up SC.Benchmark (194360acc5).
+* Cherry-picked. Allow tooltips on AlertPane buttons (b2a3616e6c).
+* Cherry-picked. Fix typo in SC.Binding.transform causing transforms to be added to parent (e327b139f4).
+* Cherry-picked. Copy menuItemKeys to submenus (8f8bd24d4f).
+* Cherry-picked. Clear selection if collection view delegate removes all indexes (c975849dda).
+* Cherry-picked. Move the notification of property chains into _notifyPropertyObservers (209b22358d).
+* Cherry-picked. Skip branch observer invalidation on parents (7c1d846038).
+* Cherry-picked. Add the jshintrc (21ab5ac390).
+* Cherry-picked. Add the ability to specify layerId for SC.AlertPane buttons (b2816a047e).
+* Cherry-picked. Fixed computed properties to properly support use of @each (3e3313e76b).
 
 1.9.0
 ----------
