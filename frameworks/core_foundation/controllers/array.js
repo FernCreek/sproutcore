@@ -423,6 +423,15 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
   _scac_arrayContentDidChange: function(start, removed, added) {
     this._scac_cached = NO;
     this.arrayContentDidChange(start, removed, added);
+
+    // If the start & length are provided, we can also indicate if the firstObject
+    // or lastObject properties changed, thus making them independently observable.
+    if (!SC.none(start)) {
+      if (start === 0) this.notifyPropertyChange('firstObject');
+      var length = added + removed;
+      if (!SC.none(length) && start + length >= this.get('length') - 1) this.notifyPropertyChange('lastObject');
+    }
+
     this.updateSelectionAfterContentChange();
   },
 
@@ -432,7 +441,6 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
   */
   _scac_contentDidChange: function () {
     this._scac_cached = NO; // invalidate observable content
-
     var content     = this.get('content'),
         lastContent = this._scac_content,
         didChange   = this._scac_arrayContentDidChange,
