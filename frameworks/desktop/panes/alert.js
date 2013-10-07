@@ -456,11 +456,11 @@ SC.AlertPane.mixin(
         isDefault = hasDefault ? !!button.isDefault : undefined;
         isCancel = hasCancel ? !!button.isCancel : undefined;
         themeName = args.themeName || 'capsule';
-        
-        buttonView.set('title'.fmt(idx), title);
+
+        buttonView.set('title', title);
         if (toolTip) buttonView.set('toolTip', toolTip);
-        if(action) buttonView.set('customAction'.fmt(idx), action);
-        if(target) buttonView.set('customTarget'.fmt(idx), target);
+        if(action) buttonView.set('customAction', action);
+        if(target) buttonView.set('customTarget', target);
         if (layerId !== undefined) { buttonView.set('layerId', layerId); }
         if (isDefault !== undefined) { buttonView.set('isDefault', isDefault); }
         if (isCancel !== undefined) { buttonView.set('isCancel', isCancel); }
