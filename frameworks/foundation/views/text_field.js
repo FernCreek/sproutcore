@@ -1111,7 +1111,7 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
         isLion;
     // Make sure input element still exists, as a redraw could have remove it
     // already.
-    if (inputElem) {
+    if (inputElem && this.get('focused')) {
       // Determine if the OS is OS 10.7 "Lion"
       isLion = SC.browser.os === SC.OS.mac &&
           SC.browser.compare(SC.browser.osVersion, '10.7') === 0;
