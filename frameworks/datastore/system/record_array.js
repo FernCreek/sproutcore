@@ -734,7 +734,10 @@ SC.RecordArray = SC.Object.extend(SC.Enumerable, SC.Array,
   _storeKeysContentDidChange: function(start, removedCount, addedCount) {
     if (this._scra_records) this._scra_records.length=0 ; // clear cache
 
+    this.beginPropertyChanges();
     this.arrayContentDidChange(start, removedCount, addedCount);
+    this.enumerableContentDidChange(start, removedCount, addedCount - removedCount);
+    this.endPropertyChanges();
   },
 
   /** @private */
