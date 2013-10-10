@@ -189,6 +189,138 @@ test("should return a property at a given path relative to the passed object - J
 });
 
 // ..........................................................
+// SC.SET()
+//
+
+module('SC.set()', {
+  setup: function () {
+    objectA = SC.Object.create({
+
+      normal: 'value',
+      _computed: 'computed',
+      computed: function(key, value) {
+        if (value !== undefined) {
+          this._computed = value;
+        }
+        return this._computed;
+      }.property(),
+
+      unknownProperty: function(key, value) {
+        this.lastUnknownPropertyKey = key ;
+        this.lastUnknownPropertyValue = value;
+        return "unknown";
+      }
+
+    });
+
+    objectB = {
+      normal: 'value'
+    };
+  }
+});
+
+test('should set normal properties on SC.Observable', function () {
+  SC.set(objectA, 'normal', 'newNormalValue');
+  equals(objectA.normal, 'newNormalValue');
+});
+
+test('should set computed properties on SC.Observable', function () {
+  SC.set(objectA, 'computed', 'newComputedValue');
+  equals(objectA._computed, "newComputedValue");
+});
+
+test('should call unknownProperty when value is undefined on SC.Observable', function () {
+  SC.set(objectA, 'unknown', 'unknownValue');
+  equals(objectA.lastUnknownPropertyKey, 'unknown');
+  equals(objectA.lastUnknownPropertyValue, 'unknownValue');
+});
+
+test('should set normal properties on standard objects', function () {
+  SC.set(objectB, 'normal', 'newValue');
+  equals(objectB.normal, 'newValue');
+});
+
+// ..........................................................
+// SC.SETPATH()
+//
+
+module('SC.setPath()');
+
+test('should set a property at a given path relative to the window', function () {
+  window.Foo = SC.Object.create({
+    Bar: SC.Object.create({
+      Baz: 'value'
+    })
+  });
+
+  try {
+    SC.setPath('Foo.Bar.Baz', 'newValue');
+    equals(Foo.Bar.Baz, 'newValue');
+  } finally {
+    window.Foo = undefined;
+  }
+});
+
+test('should set a property at a given path relative to the passed object', function () {
+  var foo = SC.Object.create({
+    bar: SC.Object.create({
+      baz: 'value'
+    })
+  });
+
+  SC.setPath(foo, 'bar.baz', 'newValue');
+  equals(foo.bar.baz, 'newValue');
+});
+
+test('should set a property at a given key relative to the passed object', function () {
+  var foo = SC.Object.create({
+    bar: SC.Object.create({
+      baz: 'value'
+    })
+  });
+
+  SC.setPath(foo.bar, 'baz', 'newValue');
+  equals(foo.bar.baz, 'newValue');
+});
+
+test('should set a property at a given path relative to the window - standard object', function () {
+  window.Foo = {
+    Bar: {
+      Baz: 'value'
+    }
+  };
+
+  try {
+    SC.setPath('Foo.Bar.Baz', 'newValue');
+    equals(Foo.Bar.Baz, 'newValue');
+  } finally {
+    window.Foo = undefined;
+  }
+});
+
+test('should set a property at a given path relative to the passed object - standard object', function () {
+  var foo = {
+    bar: {
+      baz: 'value'
+    }
+  };
+
+  SC.setPath(foo, 'bar.baz', 'newValue');
+  equals(foo.bar.baz, 'newValue');
+});
+
+test('should set a property at a given key relative to the passed object - standard object', function () {
+  var foo = {
+    bar: {
+      baz: 'value'
+    }
+  };
+
+  SC.setPath(foo.bar, 'baz', 'newValue');
+  equals(foo.bar.baz, 'newValue');
+});
+
+// ..........................................................
 // SET()
 //
 

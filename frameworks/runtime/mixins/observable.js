@@ -1649,14 +1649,15 @@ SC.Observable = /** @scope SC.Observable.prototype */{
     SC.Logger.log("CHANGE: %@[%@] => %@".fmt(target, key, target.get(key)));
   };
 
-  /**
-    Retrieves a property from an object, using get() if the
-    object implements SC.Observable.
+  SC.mixin(/** @scope SC */ {
 
-    @param  {Object}  object  the object to query
-    @param  {String}  key the property to retrieve
-  */
-  SC.mixin(SC, {
+    /**
+      Retrieves a property from an object, using get() if the
+      object implements SC.Observable.
+
+      @param  {Object}  object  the object to query
+      @param  {String}  key the property to retrieve
+    */
     get: function(object, key) {
       if (!object) return undefined;
       if (key === undefined) return this[object];
@@ -1677,6 +1678,60 @@ SC.Observable = /** @scope SC.Observable.prototype */{
         object = window;
       }
       return SC.objectForPropertyPath(path, object);
+    },
+
+    /**
+      Sets a property on an object, using set() if the
+      object implements SC.Observable.
+
+      @param {Object} object  the object to set on
+      @param {String} key  the property to set
+      @param {*} value  the value to set
+      @returns {Object} self
+    */
+    set: function (object, key, value) {
+      if (object) {
+        if (object.set) {
+          object.set(key, value);
+        } else {
+          object[key] = value;
+        }
+      }
+      return this;
+    },
+
+    /**
+      Sets a property on an object at a specified path, using set() if
+      the object implements SC.Observable. If you pass only a path and
+      a value, object will default to window (i.e. this will be treated
+      as a global path).
+
+      @param {Object} object  the object to set on
+      @param {String} path  the path to the property to set
+      @param {*} value  the value to set
+      @returns {Object} self
+    */
+    setPath: function (object, path, value) {
+      var tuple;
+
+      if (object) {
+        if (value === undefined) {
+          value = path;
+          path = object;
+          object = window;
+        }
+
+        if (path.indexOf('.') > 0) {
+          tuple = SC.tupleForPropertyPath(path, object);
+          if (tuple && tuple[0]) {
+            SC.set(tuple[0], tuple[1], value);
+          }
+        } else {
+          SC.set(object, path, value);
+        }
+      }
+
+      return this;
     }
   });
 
