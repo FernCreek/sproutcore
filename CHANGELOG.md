@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.16 (August 29, 2013)
+Seapine SproutCore 1.9.0.17 (October 18, 2013)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -150,6 +150,21 @@ Seapine SproutCore 1.9.0.16 (August 29, 2013)
 * Cherry-picked. Add the jshintrc (21ab5ac390).
 * Cherry-picked. Add the ability to specify layerId for SC.AlertPane buttons (b2816a047e).
 * Cherry-picked. Fixed computed properties to properly support use of @each (3e3313e76b).
+* Cherry-picked. Removes layer observer from SC.ImageView and use didCreateLayer callback instead (03ef56e16f).
+* Cherry-picked. Fixes a problem with SC.ImageView and static layout that was hacked around and fixes a bug where starting with no value and then adding a CSS sprite value (8c8866373e).
+* Cherry-picked. Removes two display observers from SC.ImageView and drops undocumented support for setting the value of an image as an array (which was parsed out into a single value for some reason (75f4a321ed).
+* Cherry-picked. Adds support for sprite images based on canvas.  This fixes a bug when changing between a sprite and a URL type with the same image that created duplicate elements in the DOM (076f18f177).
+* Cherry-picked. Prevents problems with erasing class names when switching between CSS and URL image types (d3d19ec2a8).
+* Cherry-picked. Fixes regression that failed to clear canvas based image views when the value goes to null (12f3f33973).
+* Cherry-picked. Removes unneeded code and unnecessary DOM manipulation, since the canvas render delegate can support the CSS type too now (d203d2fcfc).
+* Cherry-picked. Implements @aaronk6's ticket #992 - bad IE version check when deciding whether data URIs are supported (d437669cd0).
+* Cherry-picked. Removes the restriction that render delegate data sources can only retrieve displayProperties properties.  This restriction is not especially helpful, but worse than that, it forces us to have excess display properties, which means excess observers being set up and running although not every property that effects the display necessarily needs to be observed.  For example, SC.ButtonView has several internal observers on properties that are also display properties.  It's more efficient to use those same observers to call displayDidChange and not have the properties also be display properties (26d8592ca8).
+* Cherry-picked. Removed useless .fmt() calls (9d0ee4f450).
+* Cherry-picked. Verify that text field has focus before selecting text (de0e1a07f2).
+* Cherry-picked. Fixes SC.ArrayController so that firstObject, firstSelectableObject and lastObject update properly when swapping out the content.  This also ensures that when allowsEmptySelection is false, that the selection changes to the new first object when the content is swapped (8f4f72db36).
+* Cherry-picked. Fixes a problem which kept firstObject and lastObject referenced from an array controller from updating on replace. Also fixes a problem updating lastObject on an enumerable when replacing the last items and shrinking the collection. Closes #979, closes #980 (81ad806f3d).
+* Cherry-picked. Fixed issue with SC.RecordArray not invalidating firstObject/lastObject (da2bcac840).
+* Cherry-picked. Adds SC.set and SC.setPath (23029181b4).
 
 1.9.0
 ----------
