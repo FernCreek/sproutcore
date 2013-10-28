@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.15 (June 20, 2013)
+Seapine SproutCore 1.9.0.15.1 (October 28, 2013)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -141,6 +141,9 @@ Seapine SproutCore 1.9.0.15 (June 20, 2013)
 * Cherry-picked. Fix issue with clippingFrame not being properly updated (186db9cf06).
 * Cherry-picked. Ensure menu pane position updates correctly (bfda6c73c7).
 * Cherry-picked. Clean up SC.Benchmark (194360acc5).
+* Cherry-picked. Fix module loading in IE11 (49ceacdf90).
+* Cherry-picked. Fixes SC.browser snorting of IE11.  See #993 (5feaf24ed3).
+* Cherry-picked. Use SC.browser.version instead of SC.browser.engineVersion for IE (9da90827d6).
 
 1.9.0
 ----------
