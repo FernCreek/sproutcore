@@ -259,7 +259,7 @@ SC.InlineTextFieldView = SC.TextFieldView.extend(SC.InlineEditor,
     layout.width = frame.width;
 
     isIE7 = SC.browser.isIE &&
-        SC.browser.compare(SC.browser.engineVersion, '7') === 0;
+        SC.browser.compare(SC.browser.version, '7') === 0;
     if (isCollection && tarLayout.left) {
       layout.left=frame.x-tarLayout.left-paneElem.offsetLeft-1;
       if(isIE7) layout.left--;
