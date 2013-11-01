@@ -2108,22 +2108,25 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
   */
   insertNewline: function(sender, evt) {
     var canEdit = this.get('isEditable') && this.get('canEditContent'),
-        sel, content, set, idx, itemView;
+        handled = false,
+        sel, content, set, idx = -1, itemView;
 
     // first make sure we have a single item selected; get idx
-    if (canEdit) {
-      sel     = this.get('selection') ;
-      content = this.get('content');
-      if (sel && sel.get('length') === 1) {
-        set = sel.indexSetForSource(content);
-        idx = set ? set.get('min') : -1;
-        canEdit = idx>=0;
-      }
+    sel     = this.get('selection') ;
+    content = this.get('content');
+    if (sel && sel.get('length') === 1) {
+      set = sel.indexSetForSource(content);
+      idx = set ? set.get('min') : -1;
     }
 
-    // next find itemView and ensure it supports editing
-    if (canEdit) {
+    if (idx >= 0) {
       itemView = this.itemViewForContentIndex(idx);
+    } else {
+      canEdit = false;
+    }
+
+    // next ensure itemView supports editing
+    if (canEdit) {
       canEdit = itemView && SC.typeOf(itemView.beginEditing)===SC.T_FUNCTION;
     }
 
@@ -2132,13 +2135,15 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
       this.scrollToContentIndex(idx);
       itemView = this.itemViewForContentIndex(idx); // just in case
       itemView.beginEditing();
+      handled = true;
 
     // invoke action
-    } else {
+    } else if (this._cv_hasAction(itemView)) {
       this.invokeLater(this._cv_action, 0, itemView, null) ;
+      handled = true;
     }
 
-    return YES ; // always handle
+    return handled;
   },
 
   insertTab: function(evt) {
@@ -3231,6 +3236,22 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
       if (this._cv_actionTimer) this._cv_actionTimer.invalidate();
       this._cv_actionTimer = this.invokeLater(this._cv_action, delay, view, ev, sel) ;
     }
+  },
+
+  /**
+   * Determines if _cv_action would perform an action.
+   * @param {SC.View} view selected view
+   * @returns {Boolean}
+   * @private
+   */
+  _cv_hasAction: function (view) {
+    var ret = false;
+    if (this.get('action')) {
+      ret = true;
+    } else if (view) {
+      ret = SC.typeOf(view._action) === SC.T_FUNCTION || SC.typeOf(view.action) === SC.T_FUNCTION;
+    }
+    return ret;
   },
 
   /** @private
