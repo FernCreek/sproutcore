@@ -31,13 +31,22 @@ var DummyEnumerable = SC.Object.extend( SC.Enumerable, {
 
   shiftObject: function() {
     var ret = this.content.shift();
-    this.enumerableContentDidChange(0, 1);
+    this.enumerableContentDidChange(0, 1, -1);
     return ret;
   },
 
   pushObject: function(object) {
     this.content.push(object) ;
-    this.enumerableContentDidChange(this.content.length - 2, 1);
+    this.enumerableContentDidChange(this.content.length - 1, 0, 1);
+  }
+
+});
+
+var DummyEnumerable2 = DummyEnumerable.extend({
+
+  add: function (obj) {
+    this.content.push(obj);
+    this.enumerableContentDidChange();
   }
 
 });
@@ -665,4 +674,225 @@ test("should notify observers even if reduced property is cached on prototype", 
   // observed value should now be set because the reduced property observer
   // was triggered when we changed the array contents.
   equals(5, observedValue, "observedValue") ;
+});
+
+module("firstObject and lastObject", {
+  setup: function () {
+    source = "1 2 3 4 5 6 7 8 9 10".w().map(function(x) {
+      return { title: x };
+    });
+    source.firstObjectChanged = 0;
+    source.lastObjectChanged = 0;
+    source.propertyDidChange = function (key, value) {
+      switch (key) {
+      case 'firstObject':
+      case 'lastObject':
+        this[key + 'Changed']++;
+        break;
+      }
+      return Array.prototype.propertyDidChange.apply(this, arguments);
+    };
+    source.resetCallCounts = function () {
+      this.firstObjectChanged = 0;
+      this.lastObjectChanged = 0;
+    };
+  },
+
+  teardown: function () {
+    source = null;
+  }
+});
+
+test("The computed properties firstObject & lastObject should update only when they have actually changed", function () {
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+
+  // Add one at beginning
+  source.resetCallCounts();
+  source.replace(0, 0, [{ title: 'NEW AT BEGINNING' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Remove one at beginning
+  source.resetCallCounts();
+  source.replace(0, 1, []);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace one at beginning
+  source.resetCallCounts();
+  source.replace(0, 1, [{ title: 'NEW AT BEGINNING' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Add two at beginning
+  source.resetCallCounts();
+  source.replace(0, 0, [{ title: 'NEW 1 AT BEGINNING' }, { title: 'NEW 2 AT BEGINNING' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Remove two at beginning
+  source.resetCallCounts();
+  source.replace(0, 2, []);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace two at beginning with one
+  source.resetCallCounts();
+  source.replace(0, 2, [{ title: 'NEW AT BEGINNING' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Add one at end
+  source.resetCallCounts();
+  source.replace(source.length, 0, [{ title: 'NEW AT END' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Remove one at end
+  source.resetCallCounts();
+  source.replace(source.length - 1, 1, []);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Replace one at end
+  source.resetCallCounts();
+  source.replace(source.length - 1, 1, [{ title: 'NEW AT END' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Add two at end
+  source.resetCallCounts();
+  source.replace(source.length, 0, [{ title: 'NEW 1 AT END'}, { title: 'NEW 2 AT END' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Remove two at end
+  source.resetCallCounts();
+  source.replace(source.length - 2, 2, []);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Replace two at end with one
+  source.resetCallCounts();
+  source.replace(source.length - 2, 2, [{ title: 'NEW IN MIDDLE' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Remove one near end
+  source.resetCallCounts();
+  source.replace(source.length - 2, 1, []);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace one near end
+  source.resetCallCounts();
+  source.replace(source.length - 2, 1, [{ title: 'NEW IN MIDDLE' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Remove two near end
+  source.resetCallCounts();
+  source.replace(source.length - 3, 2, []);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace two near end with one
+  source.resetCallCounts();
+  source.replace(source.length - 3, 2, [{ title: 'NEW IN MIDDLE' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace all
+  source.resetCallCounts();
+  source.replace(0, source.length, [{ title: 'REPLACE ALL' }]);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(source.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // No-op at beginning
+  source.resetCallCounts();
+  source.replace(0, 0, []);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // No-op at end
+  source.resetCallCounts();
+  source.replace(source.length, 0, []);
+
+  equals(source.get('firstObject'), source[0], 'firstObject should be the first object in source');
+  equals(source.get('lastObject'), source[source.length - 1], 'lastObject should be the last object in source');
+  equals(source.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(source.lastObjectChanged, 0, 'lastObject not invalidated');
+});
+
+test("firstObject and lastObject with unordered enumerable", function () {
+  var source = DummyEnumerable2.create({ content: SC.clone(CommonArray) }),
+      firstObjectCalled = 0,
+      lastObjectCalled = 0;
+
+  source.addObserver('firstObject', function () {
+    firstObjectCalled++;
+  });
+  source.addObserver('lastObject', function () {
+    lastObjectCalled++;
+  });
+
+  source.add(10);
+
+  equals(firstObjectCalled, 1, 'firstObject invalidated');
+  equals(lastObjectCalled, 1, 'lastObject invalidated');
 });

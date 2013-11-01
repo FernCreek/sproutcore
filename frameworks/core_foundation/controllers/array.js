@@ -426,12 +426,16 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
 
     // If the start & length are provided, we can also indicate if the firstObject
     // or lastObject properties changed, thus making them independently observable.
-    if (!SC.none(start)) {
-      if (start === 0) this.notifyPropertyChange('firstObject');
-      var length = added + removed;
-      if (!SC.none(length) && start + length >= this.get('length') - 1) this.notifyPropertyChange('lastObject');
+    // Check added + remove to see if this was a no-op.
+    if (!SC.none(start) && added + removed > 0) {
+      // If change started at 0, the firstObject changed.
+      if (start === 0) { this.notifyPropertyChange('firstObject'); }
+      // If change caused the start index to be past the end of the array, the lastObject changed.
+      // Add added to start to account for any added items.
+      if (start + added >= this.get('length')) { this.notifyPropertyChange('lastObject'); }
     }
 
+    this._scac_length = this.get('length');
     this.updateSelectionAfterContentChange();
   },
 
@@ -447,6 +451,7 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
         willChange  = this._scac_arrayContentWillChange,
         sfunc       = this._scac_contentStatusDidChange,
         efunc       = this._scac_enumerableDidChange,
+        oldlen      = this._scac_length,
         newlen;
 
     if (content === lastContent) { return this; } // nothing to do
@@ -509,7 +514,7 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
     this._scac_contentStatusDidChange();
 
     this.arrayContentDidChange(0, 0, newlen);
-    this.enumerableContentDidChange(0, newlen - 1);
+    this.enumerableContentDidChange(0, oldlen, newlen - oldlen);
     this.updateSelectionAfterContentChange();
   }.observes('content'),
 
@@ -533,7 +538,7 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
     // invalidate the whole array.
     this.arrayContentWillChange(0, oldlen, newlen);
     this.arrayContentDidChange(0, oldlen, newlen);
-    this.enumerableContentDidChange(0, oldlen - 1);
+    this.enumerableContentDidChange(0, oldlen, newlen - oldlen);
     this.endPropertyChanges();
     this.updateSelectionAfterContentChange();
   }.observes('orderBy'),
