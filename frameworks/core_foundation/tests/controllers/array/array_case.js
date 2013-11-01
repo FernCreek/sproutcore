@@ -168,34 +168,6 @@ test("arrangedObjects", function() {
   equals(controller.get("arrangedObjects"), controller, 'c.arrangedObjects should return receiver');
 });
 
-test("The computed properties firstObject, firstSelectableObject & lastObject should update when content changes.", function(){
-  equals(controller.get('firstObject'), content[0], 'first object should be the first object in content');
-  equals(controller.get('firstSelectableObject'), content[0], 'first selectable object should be the first object in content');
-  equals(controller.get('lastObject'), content[4], 'lastObject should be the last object in content');
-
-  // Reorder the content
-  var newObject = TestObject.create({ title: "BLAH" });
-  controller.set('content', [newObject]);
-
-  equals(controller.get('firstObject'), newObject, 'first object should be the new first object in content');
-  equals(controller.get('firstSelectableObject'), newObject, 'first selectable object should be the new first object in content');
-  equals(controller.get('lastObject'), newObject, 'lastObject should be the new last object in content');
-});
-
-test("The computed properties firstObject, firstSelectableObject & lastObject should update when content items change.", function(){
-  equals(controller.get('firstObject'), content[0], 'first object should be the first object in content');
-  equals(controller.get('firstSelectableObject'), content[0], 'first selectable object should be the first object in content');
-  equals(controller.get('lastObject'), content[4], 'lastObject should be the last object in content');
-
-  // Change the items.
-  var newObject = TestObject.create({ title: "BLAH" });
-  controller.replace(0, 5, [newObject]);
-
-  equals(controller.get('firstObject'), newObject, 'first object should be the new first object in content');
-  equals(controller.get('firstSelectableObject'), newObject, 'first selectable object should be the new first object in content');
-  equals(controller.get('lastObject'), newObject, 'lastObject should be the new last object in content');
-});
-
 test("array orderBy using String", function(){
   var testController = SC.ArrayController.create({
     content: content,
@@ -342,6 +314,241 @@ test("should invalidate computed property once per changed key", function() {
 
 });
 
+module("SC.ArrayController - array_case - NON-EMPTY - firstObject, firstSelectableObject & lastObject", {
+  setup: function() {
+    content = "1 2 3 4 5 6 7 8 9 10".w().map(function(x) {
+      return TestObject.create({ title: x });
+    });
+
+    controller = SC.ArrayController.create({
+      content: content,
+      firstObjectChanged: 0,
+      lastObjectChanged: 0,
+      propertyDidChange: function (key, value) {
+        switch (key) {
+        case 'firstObject':
+        case 'lastObject':
+          this[key + 'Changed']++;
+          break;
+        }
+        return sc_super();
+      },
+      resetCallCounts: function () {
+        this.firstObjectChanged = 0;
+        this.lastObjectChanged = 0;
+      }
+    });
+    extra = TestObject.create({ title: "FOO" });
+  },
+
+  teardown: function() {
+    controller.destroy();
+  }
+});
+
+test("The computed properties firstObject, firstSelectableObject & lastObject should update when content changes.", function(){
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('firstSelectableObject'), content[0], 'firstSelectableObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+
+  // Reorder the content
+  var newObject = TestObject.create({ title: "BLAH" });
+  controller.set('content', [newObject]);
+
+  equals(controller.get('firstObject'), newObject, 'firstObject should be the new first object in content');
+  equals(controller.get('firstSelectableObject'), newObject, 'firstSelectableObject should be the new first object in content');
+  equals(controller.get('lastObject'), newObject, 'lastObject should be the new last object in content');
+});
+
+test("The computed properties firstObject, firstSelectableObject & lastObject should update when content items change.", function(){
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('firstSelectableObject'), content[0], 'firstSelectableObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+
+  // Change the items.
+  var newObject = TestObject.create({ title: "BLAH" });
+  controller.replace(0, 10, [newObject]);
+
+  equals(controller.get('firstObject'), newObject, 'firstObject should be the new first object in content');
+  equals(controller.get('firstSelectableObject'), newObject, 'firstSelectableObject should be the new first object in content');
+  equals(controller.get('lastObject'), newObject, 'lastObject should be the new last object in content');
+});
+
+test("The computed properties firstObject & lastObject should update only when they have actually changed", function () {
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+
+  // Add one at beginning
+  controller.resetCallCounts();
+  controller.replace(0, 0, [TestObject.create({ title: 'NEW AT BEGINNING' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Remove one at beginning
+  controller.resetCallCounts();
+  controller.replace(0, 1, []);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace one at beginning
+  controller.resetCallCounts();
+  controller.replace(0, 1, [TestObject.create({ title: 'NEW AT BEGINNING' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Add two at beginning
+  controller.resetCallCounts();
+  controller.replace(0, 0, [TestObject.create({ title: 'NEW 1 AT BEGINNING' }), TestObject.create({ title: 'NEW 2 AT BEGINNING' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Remove two at beginning
+  controller.resetCallCounts();
+  controller.replace(0, 2, []);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace two at beginning with one
+  controller.resetCallCounts();
+  controller.replace(0, 2, [TestObject.create({ title: 'NEW AT BEGINNING' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Add one at end
+  controller.resetCallCounts();
+  controller.replace(content.length, 0, [TestObject.create({ title: 'NEW AT END' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Remove one at end
+  controller.resetCallCounts();
+  controller.replace(content.length - 1, 1, []);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Replace one at end
+  controller.resetCallCounts();
+  controller.replace(content.length - 1, 1, [TestObject.create({ title: 'NEW AT END' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Add two at end
+  controller.resetCallCounts();
+  controller.replace(content.length, 0, [TestObject.create({ title: 'NEW 1 AT END'}), TestObject.create({ title: 'NEW 2 AT END' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Remove two at end
+  controller.resetCallCounts();
+  controller.replace(content.length - 2, 2, []);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Replace two at end with one
+  controller.resetCallCounts();
+  controller.replace(content.length - 2, 2, [TestObject.create({ title: 'NEW IN MIDDLE' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // Remove one near end
+  controller.resetCallCounts();
+  controller.replace(content.length - 2, 1, []);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace one near end
+  controller.resetCallCounts();
+  controller.replace(content.length - 2, 1, [TestObject.create({ title: 'NEW IN MIDDLE' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Remove two near end
+  controller.resetCallCounts();
+  controller.replace(content.length - 3, 2, []);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace two near end with one
+  controller.resetCallCounts();
+  controller.replace(content.length - 3, 2, [TestObject.create({ title: 'NEW IN MIDDLE' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // Replace all
+  controller.resetCallCounts();
+  controller.replace(0, content.length, [TestObject.create({ title: 'REPLACE ALL' })]);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 1, 'firstObject invalidated');
+  equals(controller.lastObjectChanged, 1, 'lastObject invalidated');
+
+  // No-op at beginning
+  controller.resetCallCounts();
+  controller.replace(0, 0, []);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+
+  // No-op at end
+  controller.resetCallCounts();
+  controller.replace(content.length, 0, []);
+
+  equals(controller.get('firstObject'), content[0], 'firstObject should be the first object in content');
+  equals(controller.get('lastObject'), content[content.length - 1], 'lastObject should be the last object in content');
+  equals(controller.firstObjectChanged, 0, 'firstObject not invalidated');
+  equals(controller.lastObjectChanged, 0, 'lastObject not invalidated');
+});
 
 module("SC.ArrayController - dependent keys with @each");
 

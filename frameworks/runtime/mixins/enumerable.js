@@ -820,11 +820,31 @@ SC.Reducers = /** @scope SC.Reducers.prototype */ {
     @returns {Object} receiver
   */
   enumerableContentDidChange: function(start, length, deltas) {
+    // In all cases within sproutcore where this function is called, length and deltas have the following meaning:
+    // - length = removedCount
+    // - deltas = addedCount - removedCount
+    // So we can reverse this with deltas to get the addedCount.
+    var added = deltas + length,
+        noop = !SC.none(length) && !SC.none(deltas) && added + length === 0;
+
     // If the start & length are provided, we can also indicate if the firstObject
     // or lastObject properties changed, thus making them independently observable.
-    if (!SC.none(start)) {
-      if (start === 0) this.notifyPropertyChange('firstObject');
-      if (!SC.none(length) && start + length >= this.get('length') - 1) this.notifyPropertyChange('lastObject');
+    // Check to see if this was a no-op.
+    if (!noop) {
+      // If change started at 0, the firstObject changed. If we weren't passed a start value,
+      // always notify. We assume in this case that this enumerable has non-observable firstObject,
+      // but we still want to make sure it is invalidated so get('firstObject') returns the correct value.
+      if (SC.none(start) || start === 0) {
+        this.notifyPropertyChange('firstObject');
+      }
+      // If change caused the start index to be past the end of the array, the lastObject changed.
+      // Add added to start to account for any added items.
+      // If we weren't passed start, length, or deltas, always notify. We assume in this case that this
+      // enumerable has a non-observable lastObject, but we still want to make sure it is
+      // invalidated so get('lastObject') returns the correct value.
+      if (SC.none(start) || SC.none(length) || SC.none(deltas) || start + added >= this.get('length')) {
+        this.notifyPropertyChange('lastObject');
+      }
     }
 
     this.notifyPropertyChange('[]') ;
