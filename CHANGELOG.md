@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.17 (October 18, 2013)
+Seapine SproutCore 1.9.0.18 (November 4, 2013)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -165,6 +165,12 @@ Seapine SproutCore 1.9.0.17 (October 18, 2013)
 * Cherry-picked. Fixes a problem which kept firstObject and lastObject referenced from an array controller from updating on replace. Also fixes a problem updating lastObject on an enumerable when replacing the last items and shrinking the collection. Closes #979, closes #980 (81ad806f3d).
 * Cherry-picked. Fixed issue with SC.RecordArray not invalidating firstObject/lastObject (da2bcac840).
 * Cherry-picked. Adds SC.set and SC.setPath (23029181b4).
+* Cherry-picked. Fix module loading in IE11 (de87cd4110).
+* Cherry-picked. Fixes SC.browser snorting of IE11.  See #993 (4a178d6ed0).
+* Cherry-picked. Use SC.browser.version instead of SC.browser.engineVersion for IE (1d4d8d3f4f).
+* Cherry-picked. Adds unit test proving #979 (ff9b85957a).
+* Cherry-picked. Further fixes to firstObject/lastObject invalidation (7cba99d67e).
+* Cherry-picked. Only return true from SC.CollectionView#insertNewline if handled (de4a79afa9).
 
 1.9.0
 ----------
