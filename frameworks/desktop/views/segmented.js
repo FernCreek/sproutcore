@@ -288,6 +288,15 @@ SC.SegmentedView = SC.View.extend(SC.Control,
   overflowIcon: null,
 
   /**
+    A reference to the currently shown overflow menu, if it is currently active. Otherwise, this
+    will be set to null.
+
+    @type {SC.MenuPane}
+    @default null
+  */
+  overflowMenu: null,
+
+  /**
     The view class used when creating segments.
 
     @type SC.View
@@ -345,6 +354,7 @@ SC.SegmentedView = SC.View.extend(SC.Control,
   destroy: function() {
     var childViews = this.get('childViews'),
         itemKeys = this.get('itemKeys'),
+        overflowMenu = this.get('overflowMenu'),
         itemKey, i, j, localItem, childView;
 
     // If we have segments
@@ -365,9 +375,15 @@ SC.SegmentedView = SC.View.extend(SC.Control,
       }
     }
 
+    if (overflowMenu) {
+      // Make sure we don't leave the overflow menu hanging around. Bad things happen if we allow a
+      // dangling menu to persist.
+      overflowMenu.remove();
+    }
+
     return sc_super();
   },
-  
+
   shouldHandleOverflowDidChange: function() {
     if (this.get('shouldHandleOverflow')) {
       // remeasure should show/hide it as needed
@@ -1238,6 +1254,16 @@ SC.SegmentedView = SC.View.extend(SC.Control,
 
         self.activeChildView.set('isActive', NO);
         self.activeChildView = null;
+      },
+
+      /**
+        When the overflow menu pane is removed, make sure it is destroyed and the segmented view's reference is cleared.
+      */
+      remove: function () {
+        sc_super();
+
+        self.set('overflowMenu', null);
+        this.destroy();
       }
     });
 
@@ -1246,6 +1272,8 @@ SC.SegmentedView = SC.View.extend(SC.Control,
     menu.popup(overflowElement);
 
     menu.addObserver("selectedItem", this, 'selectOverflowItem');
+
+    this.set('overflowMenu', menu);
   },
 
   /** @private

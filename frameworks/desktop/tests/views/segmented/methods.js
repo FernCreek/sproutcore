@@ -60,3 +60,22 @@ test("Check that properties are mapped correctly", function() {
   equals(childViews[0].index, 0, 'Computed properties should match');
 });
 
+test("Check that overflow menu is properly cleaned up when segmented view is destroyed", function () {
+  var overflowMenu;
+
+  view.showOverflowMenu();
+  overflowMenu = view.get('overflowMenu');
+  view.destroy();
+
+  equals(overflowMenu.isDestroyed, true, "Overflow menu is cleaned up");
+});
+
+test("Check that overflow menu is properly cleaned up when removed", function () {
+  var overflowMenu;
+
+  view.showOverflowMenu();
+  overflowMenu = view.get('overflowMenu');
+  overflowMenu.remove();
+
+  equals(overflowMenu.isDestroyed, true, "Overflow menu is cleaned up");
+});
