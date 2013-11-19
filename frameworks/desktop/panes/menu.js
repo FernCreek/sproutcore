@@ -1257,7 +1257,7 @@ SC.MenuPane = SC.PickerPane.extend(
 
     // If escape key or the enter key was pressed and no menu item handled it,
     // close the menu pane and return YES that the event was handled
-    if (keyEquivalent === 'escape'|| keyEquivalent === 'return') {
+    if (this.get('isVisibleInWindow') && (keyEquivalent === 'escape'|| keyEquivalent === 'return')) {
       this.remove();
       return YES;
     }
