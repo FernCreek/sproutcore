@@ -683,10 +683,6 @@ SC.CoreArray = /** @lends SC.Array.prototype */ {
         var idx,
             len = removedObjects.get('length');
 
-        if (len > 0) {
-          chain.notifyPropertyDidChange();
-        }
-
         for (idx = 0; idx < len; idx++) {
           this._removePropertyChainCloneFromItem(chain, removedObjects.objectAt(idx));
         }
@@ -711,13 +707,13 @@ SC.CoreArray = /** @lends SC.Array.prototype */ {
         var idx,
             len = addedObjects.get('length');
 
-        if (len > 0) {
-          chain.notifyPropertyDidChange();
-        }
-
         for (idx = 0; idx < len; idx++) {
           this._clonePropertyChainToItem(chain, addedObjects.objectAt(idx));
         }
+
+        // We don't call this in teardownEnumerablePropertyChains, so we always call it
+        // here, with the assumption that something was either added or removed.
+        chain.notifyPropertyDidChange();
       }, this);
     }
     return this ;
