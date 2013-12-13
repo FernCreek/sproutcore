@@ -88,7 +88,21 @@ SC.PopupButtonView = SC.ButtonView.extend(
       SC.backgroundTaskQueue.push(SC.PopupButtonMenuLoader.create({ popupButton: this }));
     }
   },
-  
+
+  /** @private
+    Destroy the menu if necessary.
+  */
+  destroy: function () {
+    var ret = sc_super(),
+        menu = this.get('menu');
+
+    if (menu && menu.isObject) {
+      menu.destroy();
+    }
+
+    return ret;
+  },
+
   /** @private
     Sets up binding on the menu, removing any old ones if necessary.
   */
