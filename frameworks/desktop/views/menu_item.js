@@ -431,24 +431,25 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
     if (this.get('hasSubMenu')) return NO;
 
     var disableFlash = this.getContentProperty('itemDisableMenuFlashKey'),
-        menu;
+        menu = this.getPath('parentMenu.rootMenu');
 
-    if (disableFlash) {
-      // Menu flashing has been disabled for this menu item, so perform
-      // the action immediately.
-      this.sendAction();
-    } else {
-      // Flash the highlight of the menu item to indicate selection,
-      // then actually send the action once its done.
-      this._flashCounter = 0;
+    if (menu && !menu._isFlashing) {
+      if (disableFlash) {
+        // Menu flashing has been disabled for this menu item, so perform
+        // the action immediately.
+        this.sendAction();
+      } else {
+        // Flash the highlight of the menu item to indicate selection,
+        // then actually send the action once its done.
+        this._flashCounter = 0;
 
-      // Set a flag on the root menu to indicate that we are in a
-      // flashing state. In the flashing state, no other menu items
-      // should become selected.
-      menu = this.getPath('parentMenu.rootMenu');
-      menu._isFlashing = YES;
-      this.invokeLater(this.flashHighlight, 25);
-      this.invokeLater(this.sendAction, 150);
+        // Set a flag on the root menu to indicate that we are in a
+        // flashing state. In the flashing state, no other menu items
+        // should become selected.
+        menu._isFlashing = YES;
+        this.invokeLater(this.flashHighlight, 25);
+        this.invokeLater(this.sendAction, 150);
+      }
     }
 
     return YES;
@@ -463,32 +464,33 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
         rootMenu = this.getPath('parentMenu.rootMenu'),
         responder;
 
-    // Close the menu
-    this.getPath('parentMenu.rootMenu').remove();
-    // We're no longer flashing
-    rootMenu._isFlashing = NO;
+    if (rootMenu) {
+      // Close the menu
+      rootMenu.remove();
+      // We're no longer flashing
+      rootMenu._isFlashing = NO;
 
-    action = (action === undefined) ? rootMenu.get('action') : action;
-    target = (target === undefined) ? rootMenu.get('target') : target;
+      action = (action === undefined) ? rootMenu.get('action') : action;
+      target = (target === undefined) ? rootMenu.get('target') : target;
 
-    // Notify the root menu pane that the selection has changed
-    rootMenu.set('selectedItem', this.get('content'));
+      // Notify the root menu pane that the selection has changed
+      rootMenu.set('selectedItem', this.get('content'));
 
-    // Legacy support for actions that are functions
-    if (SC.typeOf(action) === SC.T_FUNCTION) {
-      action.apply(target, [rootMenu]);
-      //@if(debug)
-      SC.Logger.warn('Support for menu item action functions has been deprecated. Please use target and action.');
-      //@endif
-    } else {
-      responder = this.getPath('pane.rootResponder') || SC.RootResponder.responder;
+      // Legacy support for actions that are functions
+      if (SC.typeOf(action) === SC.T_FUNCTION) {
+        action.apply(target, [rootMenu]);
+        //@if(debug)
+        SC.Logger.warn('Support for menu item action functions has been deprecated. Please use target and action.');
+        //@endif
+      } else {
+        responder = this.getPath('pane.rootResponder') || SC.RootResponder.responder;
 
-      if (responder) {
-        // Send the action down the responder chain
-        responder.sendAction(action, target, rootMenu);
+        if (responder) {
+          // Send the action down the responder chain
+          responder.sendAction(action, target, rootMenu);
+        }
       }
     }
-
   },
 
   /** @private
