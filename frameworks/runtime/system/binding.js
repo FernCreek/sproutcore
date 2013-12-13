@@ -481,9 +481,10 @@ SC.Binding = /** @scope SC.Binding.prototype */{
     this.disconnect();
 
     // Aggressively null out internal properties.
+    this.parentBinding = null;
     this._bindingSource = null;
-    this._toRoot = this._toTarget = null;
-    this._fromRoot = this._fromTarget = null;
+    this._toRoot = this._toTarget = this._toPropertyPath = null;
+    this._fromRoot = this._fromTarget = this._fromPropertyPath = null;
     this._toObserverData = this._fromObserverData = null;
   },
 

@@ -325,6 +325,12 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
     this._scac_contentDidChange();
   },
 
+  /** @private */
+  destroy: function() {
+    this._scac_teardownContentObservers();
+    return sc_super();
+  },
+
   /** @private
     Cached observable content property.  Set to NO to indicate cache is
     invalid.
@@ -439,6 +445,34 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
     this.updateSelectionAfterContentChange();
   },
 
+  /**
+   * Teardown observers on the content
+   * @private
+   */
+  _scac_teardownContentObservers: function() {
+    var lastContent = this._scac_content,
+      didChange = this._scac_arrayContentDidChange,
+      willChange = this._scac_arrayContentWillChange,
+      sfunc = this._scac_contentStatusDidChange,
+      efunc = this._scac_enumerableDidChange;
+
+    if (lastContent) {
+      if (lastContent.isSCArray) {
+        lastContent.removeArrayObservers({
+          target: this,
+          didChange: didChange,
+          willChange: willChange
+        });
+      } else if (lastContent.isEnumerable) {
+        lastContent.removeObserver('[]', this, efunc);
+      }
+
+      lastContent.removeObserver('status', this, sfunc);
+
+      this.teardownEnumerablePropertyChains(lastContent);
+    }
+  },
+
   /** @private
     Whenever content changes, setup and teardown observers on the content
     as needed.
@@ -457,21 +491,7 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
     if (content === lastContent) { return this; } // nothing to do
 
     // teardown old observer
-    if (lastContent) {
-      if (lastContent.isSCArray) {
-        lastContent.removeArrayObservers({
-          target: this,
-          didChange: didChange,
-          willChange: willChange
-        });
-      } else if (lastContent.isEnumerable) {
-        lastContent.removeObserver('[]', this, efunc);
-      }
-
-      lastContent.removeObserver('status', this, sfunc);
-
-      this.teardownEnumerablePropertyChains(lastContent);
-    }
+    this._scac_teardownContentObservers();
 
     // save new cached values
     this._scac_cached = NO;
