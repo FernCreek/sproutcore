@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.18 (November 4, 2013)
+Seapine SproutCore 1.9.0.19 (December 16, 2013)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -171,6 +171,16 @@ Seapine SproutCore 1.9.0.18 (November 4, 2013)
 * Cherry-picked. Adds unit test proving #979 (ff9b85957a).
 * Cherry-picked. Further fixes to firstObject/lastObject invalidation (7cba99d67e).
 * Cherry-picked. Only return true from SC.CollectionView#insertNewline if handled (de4a79afa9).
+* Cherry-picked. Cleanup SC.SegmentedView overflow menu (76917321cf).
+* Cherry-picked. Prevent SC.MenuPane from handling escape/return when not visible (52e65b0c29).
+* Cherry-picked. Fixed issue with property chain notifications (ac904cb335).
+* Cherry-picked. Fix bad merge in previous fix (78a1c2ca46).
+* Cherry-picked. Fix some additional memory leaks (8730b59958).
+* Cherry-picked. Fix crash when double clicking on menu items (419f1acaf7).
+* Cherry-picked. Fix unknown exception in IE (d4fc5a8dcb).
+* Cherry-picked. Fix user agent detection for Opera (a0a516d96f).
+* Cherry-picked. Fix crash when removing highlight from menu items with submenus (5c061faa6e).
+* Cherry-picked. Adds an unbind function (a3d219da6f).
 
 1.9.0
 ----------
