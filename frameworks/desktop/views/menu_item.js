@@ -599,16 +599,18 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
     var subMenu = this.get('subMenu'), parentMenu = this.get('parentMenu'),
         currentMenuItem, previousMenuItem;
 
-    if (!subMenu.get('mouseHasEntered')) {
-      currentMenuItem = parentMenu.get('currentMenuItem');
-      if (currentMenuItem === this || currentMenuItem === null) {
-        previousMenuItem = parentMenu.get('previousMenuItem');
+    if (parentMenu) {
+      if (!subMenu.get('mouseHasEntered')) {
+        currentMenuItem = parentMenu.get('currentMenuItem');
+        if (currentMenuItem === this || currentMenuItem === null) {
+          previousMenuItem = parentMenu.get('previousMenuItem');
 
-        if (previousMenuItem) {
-          previousMenuItem.resignFirstResponder();
+          if (previousMenuItem) {
+            previousMenuItem.resignFirstResponder();
+          }
+          this.resignFirstResponder();
+          subMenu.remove();
         }
-        this.resignFirstResponder();
-        subMenu.remove();
       }
     }
   },
