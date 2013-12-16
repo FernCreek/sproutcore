@@ -1373,6 +1373,23 @@ SC.Observable = /** @scope SC.Observable.prototype */{
     },
 
     /**
+      Removes a binding that was created with bind.
+
+      @param {String} key The key to unbind. This should match the toKey passed to bind.
+    */
+    unbind: function (key) {
+      var binding;
+
+      if (!SC.empty(key)) {
+        binding = this.bindings.findProperty('_toPropertyKey', key);
+        if (binding) {
+          binding.destroy();
+          this.bindings.removeObject(binding);
+        }
+      }
+    },
+
+    /**
       didChangeFor allows you to determine if a property has changed since the
       last time the method was called. You must pass a unique context as the
       first parameter (so didChangeFor can identify which method is calling it),
