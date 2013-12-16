@@ -468,13 +468,23 @@ SC.PickerPane = SC.PalettePane.extend(
     if (anchor.getBoundingClientRect) {
       // Webkit and Firefox 3.5 will get everything they need by
       // calling getBoundingClientRect()
-      bounding = anchor.getBoundingClientRect();
-      ret = {
-        x:      bounding.left,
-        y:      bounding.top,
-        width:  bounding.width,
-        height: bounding.height
-      };
+      try {
+        bounding = anchor.getBoundingClientRect();
+        ret = {
+          x:      bounding.left,
+          y:      bounding.top,
+          width:  bounding.width,
+          height: bounding.height
+        };
+      } catch (e) {
+        // In rare situations, IE will throw an unknown exception. Catch it here so we don't crash
+        ret = {
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0
+        };
+      }
       // If width and height are undefined this means we are in IE or FF<3.5
       // if we did not get the frame dimensions the do the calculations
       // based on an element
@@ -881,7 +891,6 @@ SC.PickerPane = SC.PalettePane.extend(
   /** Figure out what is the anchor element */
   anchorElement: function(key, value) {
     var anchorView;
-
     if (value === undefined) {
       // Getting the value.
       anchorView = this.get('_anchorView');
