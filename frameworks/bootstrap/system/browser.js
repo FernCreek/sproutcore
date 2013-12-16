@@ -115,7 +115,8 @@ SC.detectBrowser = function(userAgent, language) {
 
   nameAndVersion =
     // Match the specific names first, avoiding commonly spoofed browsers.
-    userAgent.match(new RegExp('(opera|chrome|firefox|android|blackberry)' + conExp + numExp)) ||
+    userAgent.match(new RegExp('(opera|opr|firefox|android|blackberry)' + conExp + numExp)) ||
+    userAgent.match(new RegExp('(chrome)' + conExp + numExp)) ||
     userAgent.match(new RegExp('(ie|safari)' + conExp + numExp)) ||
     userAgent.match(new RegExp('(trident)')) ||
     ['', SC.BROWSER.unknown, '0'];
@@ -129,6 +130,7 @@ SC.detectBrowser = function(userAgent, language) {
   // If there is no `Version` in Safari, don't use the Safari number since it is
   // the Webkit number.
   else if (nameAndVersion[1] === SC.BROWSER.safari) { nameAndVersion[2] = '0'; }
+  else if (nameAndVersion[1] === 'opr') { nameAndVersion[1] = SC.BROWSER.opera; }
   else if (nameAndVersion[1] === SC.ENGINE.trident) {
     // Special handling for IE11 (no 'ie' component, only 'trident' + 'rv')
     nameAndVersion[1] = SC.BROWSER.ie;
