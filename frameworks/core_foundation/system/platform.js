@@ -377,7 +377,7 @@ SC.platform = SC.Object.create({
   } else if((/opera/).test( userAgent )) {
     SC.platform.cssPrefix = 'opera';
     SC.platform.domCSSPrefix = 'O';
-  } else if((/msie/).test( userAgent ) && !(/opera/).test( userAgent )) {
+  } else if(((/msie/).test( userAgent ) || (/trident/).test(userAgent)) && !(/opera/).test( userAgent )) {
     SC.platform.cssPrefix = 'ms';
     SC.platform.domCSSPrefix = 'ms';
   } else if((/mozilla/).test( userAgent ) && !(/(compatible|webkit)/).test( userAgent )) {
