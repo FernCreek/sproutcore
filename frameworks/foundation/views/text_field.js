@@ -866,21 +866,21 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
         SC.Event.add(input, 'keypress', this, this._firefox_dispatch_keypress);
       }
     }
-
-    if (this.get('hintOnFocus') ||
-        (SC.browser.name === SC.BROWSER.ie && SC.browser.version <= 8 && !this.get('isTextArea'))) {
-      this.invokeLast(this._fixupTextLayout);
-    }
   },
 
-  didAppendToDocument: function() {
+  didAppendToDocument: function () {
     this._fixupTextLayout();
   },
 
+    /** @private */
+  _fixupTextLayout: function () {
+    this.invokeOnce('__fixupTextLayout');
+  }.observes('isVisibleInWindow'),
+
   /** @private
     Apply proper text layout to sc-hints and inputs.
-   */
-  _fixupTextLayout: function () {
+  */
+  __fixupTextLayout: function () {
     var height = this.get('frame').height;
 
     if (SC.browser.name === SC.BROWSER.ie && SC.browser.version <= 8 &&
