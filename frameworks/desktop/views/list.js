@@ -471,56 +471,58 @@ SC.ListView = SC.CollectionView.extend(SC.CollectionRowDelegate,
            = this.get('insertionPointView').create();
     }
 
-    var index  = itemView.get('contentIndex'),
-        len    = this.get('length'),
-        layout = SC.clone(itemView.get('layout')),
-        level  = itemView.get('outlineLevel'),
-        indent = itemView.get('outlineIndent') || 0,
-        group;
+    if (itemView) {
+      var index  = itemView.get('contentIndex'),
+          len    = this.get('length'),
+          layout = SC.clone(itemView.get('layout')),
+          level  = itemView.get('outlineLevel'),
+          indent = itemView.get('outlineIndent') || 0,
+          group;
 
-    // show item indented if we are inserting at the end and the last item
-    // is a group item.  This is a special case that should really be
-    // converted into a more general protocol.
-    if ((index >= len) && index>0) {
-      group = this.itemViewForContentIndex(len-1);
-      if (group.get('isGroupView')) {
-        level = 1;
-        indent = group.get('outlineIndent');
-      }
-    }
-
-    if (SC.none(level)) level = -1;
-
-    if (dropOperation & SC.DROP_ON) {
-      if (itemView !== this._lastDropOnView) {
-        this.hideInsertionPoint();
-
-        // If the drag is supposed to drop onto an item, notify the item that it
-        // is the current target of the drop.
-        itemView.set('isDropTarget', YES);
-
-        // Track the item so that we can clear isDropTarget when the drag changes;
-        // versus having to clear it from all items.
-        this._lastDropOnView = itemView;
-      }
-    } else {
-
-      if (this._lastDropOnView) {
-        // If there was an item that was the target of the drop previously, be
-        // sure to clear it.
-        this._lastDropOnView.set('isDropTarget', NO);
-        this._lastDropOnView = null;
+      // show item indented if we are inserting at the end and the last item
+      // is a group item.  This is a special case that should really be
+      // converted into a more general protocol.
+      if ((index >= len) && index>0) {
+        group = this.itemViewForContentIndex(len-1);
+        if (group.get('isGroupView')) {
+          level = 1;
+          indent = group.get('outlineIndent');
+        }
       }
 
-      if (dropOperation & SC.DROP_AFTER) layout.top += layout.height;
+      if (SC.none(level)) level = -1;
 
-      layout.height = 2;
-      layout.right  = 0;
-      layout.left   = ((level+1) * indent) + 12;
-      delete layout.width;
+      if (dropOperation & SC.DROP_ON) {
+        if (itemView !== this._lastDropOnView) {
+          this.hideInsertionPoint();
 
-      view.set('layout', layout);
-      this.appendChild(view);
+          // If the drag is supposed to drop onto an item, notify the item that it
+          // is the current target of the drop.
+          itemView.set('isDropTarget', YES);
+
+          // Track the item so that we can clear isDropTarget when the drag changes;
+          // versus having to clear it from all items.
+          this._lastDropOnView = itemView;
+        }
+      } else {
+
+        if (this._lastDropOnView) {
+          // If there was an item that was the target of the drop previously, be
+          // sure to clear it.
+          this._lastDropOnView.set('isDropTarget', NO);
+          this._lastDropOnView = null;
+        }
+
+        if (dropOperation & SC.DROP_AFTER) layout.top += layout.height;
+
+        layout.height = 2;
+        layout.right  = 0;
+        layout.left   = ((level+1) * indent) + 12;
+        delete layout.width;
+
+        view.set('layout', layout);
+        this.appendChild(view);
+      }
     }
   },
 

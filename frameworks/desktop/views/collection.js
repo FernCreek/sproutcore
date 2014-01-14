@@ -2878,22 +2878,20 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
         // find the first index that is not in between selections.  Stop when
         // we get to the beginning.
         if (dropOp === SC.DROP_BEFORE) {
-          isPreviousInDrag = objects.indexes.contains(idx-1);
+          isPreviousInDrag = objects.indexes.contains(idx - 1);
           isNextInDrag     = objects.indexes.contains(idx);
         } else {
           isPreviousInDrag = objects.indexes.contains(idx);
-          isNextInDrag     = objects.indexes.contains(idx-1);
+          isNextInDrag     = objects.indexes.contains(idx + 1);
         }
 
         if (isPreviousInDrag && isNextInDrag) {
-          if (SC.none(this._lastInsertionIndex)) {
-            if (dropOp === SC.DROP_BEFORE) {
-              while ((idx >= 0) && objects.indexes.contains(idx)) idx--;
-            } else {
-              len = content ? content.get('length') : 0;
-              while ((idx < len) && objects.indexes.contains(idx)) idx++;
-            }
-          } else idx = this._lastInsertionIndex ;
+          if (dropOp === SC.DROP_BEFORE) {
+            while ((idx > 0) && objects.indexes.contains(idx - 1)) idx--;
+          } else {
+            len = content ? content.get('length') : 0;
+            while ((idx < len) && objects.indexes.contains(idx + 1)) idx++;
+          }
         }
 
         // If we found a valid insertion point to reorder at, then set the op
@@ -3004,11 +3002,15 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
       if (!data) return SC.DRAG_NONE ;
 
       content = this.get('content') ;
+      indexes = data.indexes;
+
+      if (dropOp === SC.DROP_AFTER) {
+        idx++;
+      }
 
       // check for special case - inserting BEFORE ourself...
       // in this case just pretend the move happened since it's a no-op
       // anyway
-      indexes = data.indexes;
       if (indexes.get('length')===1) {
         if (((dropOp === SC.DROP_BEFORE) || (dropOp === SC.DROP_AFTER)) &&
             (indexes.get('min')===idx)) return SC.DRAG_MOVE;
@@ -3020,7 +3022,7 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
       // added again later.
       objects = [];
       shift = 0;
-      data.indexes.forEach(function(i) {
+      indexes.forEach(function(i) {
         var o = content.objectAt(i-shift),
             store, sk;
         if (SC.get(o, 'isNestedRecord')) {
@@ -3036,12 +3038,13 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
           objects.push(o);
         }
         content.removeAt(i-shift);
+        if (i - shift < idx) {
+          idx--;
+        }
         shift++;
-        if (i < idx) idx--;
       }, this);
 
       // now insert objects into new insertion location
-      if (dropOp === SC.DROP_AFTER) idx++;
       content.replace(idx, 0, objects, dropOp);
       this.select(SC.IndexSet.create(idx, objects.length));
       content.endPropertyChanges(); // restart notifications
