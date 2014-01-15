@@ -59,7 +59,7 @@ window.SproutCore = window.SproutCore || SC ;
 */
 SC = window.SC; // This is dumb but necessary for jsdoc to get it right
 
-SC.VERSION = '1.9.0.19';
+SC.VERSION = '1.9.0.20';
 
 /**
   @private

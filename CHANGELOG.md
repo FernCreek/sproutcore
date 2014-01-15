@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.19 (December 16, 2013)
+Seapine SproutCore 1.9.0.20 (January 15, 2014)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -181,6 +181,10 @@ Seapine SproutCore 1.9.0.19 (December 16, 2013)
 * Cherry-picked. Fix user agent detection for Opera (a0a516d96f).
 * Cherry-picked. Fix crash when removing highlight from menu items with submenus (5c061faa6e).
 * Cherry-picked. Adds an unbind function (a3d219da6f).
+* Cherry-picked. Adds SC.Children which allows for marking objects as children of another (a98ba70b02).
+* Cherry-picked. Fix cssPrefix detection on IE11 (420a48e183).
+* Cherry-picked. Fix handling of drag reorders in SC.CollectionView (6c709b8233).
+* Cherry-picked. Fix SC.TextFieldView hint layout again (99b419ac3a).
 
 1.9.0
 ----------
