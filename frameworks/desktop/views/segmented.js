@@ -1263,7 +1263,7 @@ SC.SegmentedView = SC.View.extend(SC.Control,
         sc_super();
 
         self.set('overflowMenu', null);
-        this.destroy();
+        this.invokeLast('destroy');
       }
     });
 
