@@ -25,6 +25,18 @@ SC.View.reopen(
   }.property(),
 
   /**
+    Enhance init to compute the initial visibility.
+    This is necessary in case the isVisible property is configured such that
+    the _sc_isVisibleDidChange observer does not fire. For example, if isVisible
+    is a computed property, and its dependent keys do not initially change, or
+    if it is simply set to false.
+  */
+  init: function (original) {
+    original();
+    this.recomputeIsVisibleInWindow();
+  }.enhance(),
+
+  /**
     Recomputes the isVisibleInWindow property based on the visibility of the
     view and its parent.  If the recomputed value differs from the current
     isVisibleInWindow state, this method will also call
