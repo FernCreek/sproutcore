@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.20 (January 15, 2014)
+Seapine SproutCore 1.9.0.21 (February 5, 2014)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -185,6 +185,8 @@ Seapine SproutCore 1.9.0.20 (January 15, 2014)
 * Cherry-picked. Fix cssPrefix detection on IE11 (420a48e183).
 * Cherry-picked. Fix handling of drag reorders in SC.CollectionView (6c709b8233).
 * Cherry-picked. Fix SC.TextFieldView hint layout again (99b419ac3a).
+* Cherry-picked. Ensure initial visiblity is computed on view init (5cf1b04964).
+* Cherry-picked. Fix issue with SC.SegmentedView overflow menu not sending the action (e8338c3a52).
 
 1.9.0
 ----------
