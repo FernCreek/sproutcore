@@ -465,13 +465,6 @@ SC.View.LayoutStyleCalculator = SC.Object.extend({
     this._calculateTransforms(translateLeft, translateTop);
     this._calculateAnimations(translateLeft, translateTop);
 
-
-    // convert any numbers into a number + "px".
-    for(key in ret) {
-      value = ret[key];
-      if (typeof value === SC.T_NUMBER) { ret[key] = (value + "px"); }
-    }
-
     return ret ;
   },
 

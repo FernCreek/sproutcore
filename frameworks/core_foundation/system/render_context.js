@@ -378,7 +378,7 @@ SC.RenderContext = SC.Builder.create(
         for(key in styles) {
           if(!styles.hasOwnProperty(key)) continue ;
           value = styles[key];
-          if (value === null) continue; // skip empty styles
+          if (value === null || value === '') continue; // skip empty styles
           if (typeof value === SC.T_NUMBER && !SC.NON_PIXEL_PROPERTIES.contains(key)) value += "px";
           styleStr = styleStr + this._dasherizeStyleName(key)+": "+value + "; ";
         }
@@ -790,7 +790,25 @@ SC.RenderContext = SC.Builder.create(
     @returns {SC.RenderContext} receiver
   */
   addStyle: function(nameOrStyles, value) {
+    var key, didChange = NO, styles;
+
     if (this._elem) {
+      // Temporary patch to support using null to clear CSS properties.
+      // jQuery does not accept null values in the css function, so we
+      // need to convert any nulls to ''. This is fixed on SC master,
+      // so will become obsolete when we upgrade.
+      if (typeof nameOrStyles === SC.T_STRING && value !== undefined) {
+        if (value === null) {
+          value = '';
+        }
+      } else {
+        for (key in nameOrStyles) {
+          if (!nameOrStyles.hasOwnProperty(key)) continue;
+          if (nameOrStyles[key] === null) {
+            nameOrStyles[key] = '';
+          }
+        }
+      }
       this.$().css(nameOrStyles, value);
       return this;
     }
@@ -798,7 +816,7 @@ SC.RenderContext = SC.Builder.create(
     // get the current hash of styles.  This will extract the styles and
     // clone them if needed.  This will get the actual styles hash so we can
     // edit it directly.
-    var key, didChange = NO, styles = this.styles();
+    styles = this.styles();
 
     // simple form
     if (typeof nameOrStyles === SC.T_STRING) {
@@ -841,7 +859,7 @@ SC.RenderContext = SC.Builder.create(
   */
   removeStyle: function(styleName) {
     if (this._elem) {
-      this.$().css(styleName, null);
+      this.$().css(styleName, '');
       return this;
     }
 
