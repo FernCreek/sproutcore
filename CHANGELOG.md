@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.21 (February 5, 2014)
+Seapine SproutCore 1.9.0.22 (February 26, 2014)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -187,6 +187,13 @@ Seapine SproutCore 1.9.0.21 (February 5, 2014)
 * Cherry-picked. Fix SC.TextFieldView hint layout again (99b419ac3a).
 * Cherry-picked. Ensure initial visiblity is computed on view init (5cf1b04964).
 * Cherry-picked. Fix issue with SC.SegmentedView overflow menu not sending the action (e8338c3a52).
+* Cherry-picked. Revert "Return null if treeItemChildren length is 0." (de50f6f031).
+* Cherry-picked. Adds an escapeForCSS method to SC.String (08a1c5871c).
+* Cherry-picked. Updates jQuery framework to 1.8.3 and removes buffered jQuery (1fa06ff6f3).
+* Cherry-picked. Patches jQuery to prevent security exceptions in IE (e414161ca4).
+* Cherry-picked. Changes the patch of jQuery to use execUnsafeLocalFunction, which doesn't alter the test HTML used by jQuery and therefore should not effect the outcome of the jQuery tests while still removing the annoying IE warnings (aa6d0d4078).
+* Cherry-picked. Fixes improper use of execUnsafeLocalFunction polyfill so that jQuery tests work properly (7f126362a9).
+* Cherry-picked. Fix issue with null CSS values (478bcb933d).
 
 1.9.0
 ----------
