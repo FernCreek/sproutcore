@@ -213,9 +213,9 @@ SC.CoreView.reopen(
     @param {DOMElement} parentLayer the parent's DOM layer
     @returns {DOMElement} the discovered layer
   */
-  findLayerInParentLayer: function(parentLayer) {
-    var id = "#" + this.get('layerId').escapeForCSS();
-    return jQuery(id)[0] || jQuery(id, parentLayer)[0] ;
+  findLayerInParentLayer: function (parentLayer) {
+    var id = "#" + this.get('layerId').escapeCssIdForSelector();
+    return jQuery(id, parentLayer)[0] || jQuery(id)[0];
   },
 
   /**
