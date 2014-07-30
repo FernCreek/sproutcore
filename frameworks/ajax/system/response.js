@@ -95,6 +95,15 @@ SC.Response = SC.Object.extend(
   }.property('request').cacheable(),
 
   /**
+    Type of the response. Used to set the XHR responseType property.
+
+    @type {String}
+  */
+  responseType: function () {
+    return this.getPath('request.responseType');
+  }.property('request').cacheable(),
+
+  /**
     URL of request.
 
     @field
@@ -168,17 +177,33 @@ SC.Response = SC.Object.extend(
   */
   body: function() {
     // TODO: support XML
-    var ret = this.get('encodedBody');
-    if (ret && this.get('isJSON')) {
+    var ret = this.get('encodedBody'),
+        shouldDecodeJson = false,
+        requestedResponseType = this.get('responseType');
+
+    if (ret) {
+      // Should manually decode json if:
+      //   a) request specified as json and response type did not override that
+      //   b) requested response type was json, but we got back a string
+      //      (implying that the 'json' responseType was not supported)
+      if ((this.get('isJSON') && SC.empty(requestedResponseType)) ||
+          (requestedResponseType === 'json' && SC.typeOf(ret) === SC.T_STRING)) {
+        shouldDecodeJson = true;
+      }
+    }
+
+    if (shouldDecodeJson) {
       try {
         ret = SC.json.decode(ret);
-      } catch(e) {
+      } catch (e) {
         return SC.Error.create({
           message: e.name + ': ' + e.message,
           label: 'Response',
-          errorValue: this });
+          errorValue: this
+        });
       }
     }
+
     return ret;
   }.property('encodedBody').cacheable(),
 
@@ -481,12 +506,21 @@ SC.XHRResponse = SC.Response.extend(
     @default #rawRequest
   */
   encodedBody: function() {
-    var xhr = this.get('rawRequest');
+    var xhr = this.get('rawRequest'),
+        requestedResponseType = this.get('responseType'),
+        encodedBody;
 
-    if (!xhr) { return null; }
-    if (this.get('isXML')) { return xhr.responseXML; }
+    if (xhr) {
+      if (this.get('isXML')) {
+        encodedBody = xhr.responseXML;
+      } else if (SC.empty(xhr.responseType)) {
+        encodedBody = xhr.responseText;
+      } else {
+        encodedBody = xhr.response;
+      }
+    }
 
-    return xhr.responseText;
+    return encodedBody;
   }.property('status').cacheable(),
 
   /**
@@ -567,6 +601,11 @@ SC.XHRResponse = SC.Response.extend(
 
     // initiate request.
     rawRequest.open(this.get('type'), this.get('address'), async);
+
+    if (async) {
+      // responseType is only supported for async XHR.
+      rawRequest.responseType = this.get('responseType');
+    }
 
     // headers need to be set *after* the open call.
     headers = this.getPath('request.headers');
