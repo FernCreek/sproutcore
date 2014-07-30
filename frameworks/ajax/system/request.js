@@ -123,6 +123,14 @@ SC.Request = SC.Object.extend(SC.Copyable, SC.Freezable,
   type: 'GET',
 
   /**
+    Type of the response. Used to set the XHR responseType property.
+
+    @type {String}
+    @default ''
+  */
+  responseType: '',
+
+  /**
     An optional timeout value of the request, in milliseconds. The timer
     begins when SC.Response#fire is actually invoked by the request manager
     and not necessarily when SC.Request#send is invoked. If this timeout is
@@ -222,7 +230,8 @@ SC.Request = SC.Object.extend(SC.Copyable, SC.Freezable,
   concatenatedProperties: 'COPY_KEYS',
 
   /** @private */
-  COPY_KEYS: ['attachIdentifyingHeaders', 'isAsynchronous', 'isJSON', 'isXML', 'address', 'type', 'timeout', 'body', 'responseClass', 'willSend', 'didSend', 'willReceive', 'didReceive'],
+  COPY_KEYS: ['attachIdentifyingHeaders', 'isAsynchronous', 'isJSON', 'isXML', 'address', 'type', 'responseType',
+    'timeout', 'body', 'responseClass', 'willSend', 'didSend', 'willReceive', 'didReceive'],
 
   /**
     Returns a copy of the current request. This will only copy certain
