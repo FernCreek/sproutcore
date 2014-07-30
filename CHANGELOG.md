@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.22 (February 26, 2014)
+Seapine SproutCore 1.9.0.23 (July 30, 2014)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -194,6 +194,9 @@ Seapine SproutCore 1.9.0.22 (February 26, 2014)
 * Cherry-picked. Changes the patch of jQuery to use execUnsafeLocalFunction, which doesn't alter the test HTML used by jQuery and therefore should not effect the outcome of the jQuery tests while still removing the annoying IE warnings (aa6d0d4078).
 * Cherry-picked. Fixes improper use of execUnsafeLocalFunction polyfill so that jQuery tests work properly (7f126362a9).
 * Cherry-picked. Fix issue with null CSS values (478bcb933d).
+* Cherry-picked. Renames `escapeForCss` to the less-nice but more-precise `escapeCssIdForSelector` (1894a6061e).
+* Cherry-picked. Fixes capLength for SC.ScrollerView (6017e06f83).
+* Cherry-picked. Enhance SC.Request/SC.Response to support XHR responseType (9c23f652f3).
 
 1.9.0
 ----------
