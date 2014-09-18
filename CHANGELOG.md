@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.23 (July 30, 2014)
+Seapine SproutCore 1.9.0.24 (September 18, 2014)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -197,6 +197,7 @@ Seapine SproutCore 1.9.0.23 (July 30, 2014)
 * Cherry-picked. Renames `escapeForCss` to the less-nice but more-precise `escapeCssIdForSelector` (1894a6061e).
 * Cherry-picked. Fixes capLength for SC.ScrollerView (6017e06f83).
 * Cherry-picked. Enhance SC.Request/SC.Response to support XHR responseType (9c23f652f3).
+* Cherry-picked. Add 1 pixel of padding to SC.measureString for Chrome (f68a9435a7).
 
 1.9.0
 ----------
