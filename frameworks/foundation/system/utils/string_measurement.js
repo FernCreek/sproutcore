@@ -212,7 +212,7 @@ SC.mixin( /** @scope SC */ {
   */
   measureString: function(string, ignoreEscape) {
     var element = this._metricsCalculationElement,
-    padding = 0;
+    padding = 1; // Add 1 pixel since everybody is off by one.
 
     if (!element) {
       throw "measureString requires a string measurement environment to be set up. Did you mean metricsForString?";
@@ -224,11 +224,6 @@ SC.mixin( /** @scope SC */ {
     // the conclusion of which to use (innerText or textContent) should be cached
     else if (typeof element.innerText != "undefined") element.innerText = string;
     else element.textContent = string;
-
-    // For some reason, these browsers sometimes measure 1 pixel too small
-    if (SC.browser.isIE || SC.browser.isMozilla || SC.browser.isChrome) {
-      padding = 1;
-    }
 
     // generate result
     var result = {
