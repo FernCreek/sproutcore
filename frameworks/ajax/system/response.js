@@ -604,7 +604,9 @@ SC.XHRResponse = SC.Response.extend(
 
     if (async) {
       // responseType is only supported for async XHR.
-      rawRequest.responseType = this.get('responseType');
+      try {
+        rawRequest.responseType = this.get('responseType');
+      } catch (e) {}
     }
 
     // headers need to be set *after* the open call.
