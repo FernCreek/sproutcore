@@ -18,6 +18,7 @@ SC.BROWSER = {
   android: 'android',
   blackberry: 'blackberry',
   chrome: 'chrome',
+  edge: 'edge',
   firefox: 'firefox',
   ie: 'ie',
   opera: 'opera',
@@ -48,6 +49,7 @@ SC.DEVICE = {
   @constant
 */
 SC.ENGINE = {
+  edgeHTML: 'edge',
   gecko: 'gecko',
   opera: 'opera',
   presto: 'presto',
@@ -116,6 +118,7 @@ SC.detectBrowser = function(userAgent, language) {
   nameAndVersion =
     // Match the specific names first, avoiding commonly spoofed browsers.
     userAgent.match(new RegExp('(opera|opr|firefox|android|blackberry)' + conExp + numExp)) ||
+    userAgent.match(new RegExp('(edge)' + conExp + numExp)) ||
     userAgent.match(new RegExp('(chrome)' + conExp + numExp)) ||
     userAgent.match(new RegExp('(ie|safari)' + conExp + numExp)) ||
     userAgent.match(new RegExp('(trident)')) ||
@@ -137,6 +140,10 @@ SC.detectBrowser = function(userAgent, language) {
     this._ieVersion = nameAndVersion[2];
     nameAndVersion[2] = userAgent.match(new RegExp('(rv)' + conExp + numExp))[2];
   }
+  else if (nameAndVersion[1] === SC.BROWSER.edge) {
+    // Special handling for Edge, we only have a engine version so write an inavalid browser version
+    nameAndVersion[2] = '0';
+  }
 
   /**
     @name SC.browser.name
@@ -155,6 +162,7 @@ SC.detectBrowser = function(userAgent, language) {
   engineAndVersion =
     // Match the specific engines first, avoiding commonly spoofed browsers.
     userAgent.match( new RegExp('(presto)' + conExp + numExp) ) ||
+    userAgent.match( new RegExp('(edge)' + conExp + numExp) ) ||
     userAgent.match( new RegExp('(opera|trident|webkit|gecko)' + conExp + numExp) ) ||
     ['', SC.BROWSER.unknown, '0'];
 
@@ -201,7 +209,7 @@ SC.detectBrowser = function(userAgent, language) {
   // Normalize the os name.
   if (isIOSDevice) { osAndVersion[1] = SC.OS.ios; }
   else if (osAndVersion[1] === 'mac os x' || osAndVersion[1] === 'mac os') { osAndVersion[1] = SC.OS.mac; }
-  else if (osAndVersion[1] === 'windows nt') { osAndVersion[1] = SC.OS.windows; }
+  else if (osAndVersion[1] === 'windows nt') { osAndVersion[1] = SC.OS.win; }
 
   // Normalize the os version.
   osAndVersion[2] = osAndVersion[2] ? osAndVersion[2].replace(/_/g, '.') : '0';
@@ -229,11 +237,11 @@ SC.detectBrowser = function(userAgent, language) {
   // only maintain the 7 identifiable properties listed above:  device, name,
   // version, os, osVersion, engine and engineVersion.
 
-  /** @deprecated Since version 1.7. Use browser.os === SC.OS.windows.
+  /** @deprecated Since version 1.7. Use browser.os === SC.OS.win.
     @name SC.browser.isWindows
     @type Boolean
   */
-  browser.windows = browser.isWindows = browser.os === SC.OS.windows;
+  browser.windows = browser.isWindows = browser.os === SC.OS.win;
 
   /** @deprecated Since version 1.7. Use browser.os === SC.OS.mac.
     @name SC.browser.isMac
