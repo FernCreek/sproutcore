@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.27 (February 12, 2016)
+Seapine SproutCore 1.9.0.28 (February 56, 2016)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -201,6 +201,7 @@ Seapine SproutCore 1.9.0.27 (February 12, 2016)
 * Cherry-picked. Add 1 pixel of padding to SC.measureString for Safari (6ba715722f).
 * Cherry-picked. Catch any exceptions thrown when setting the XHR responseType property (d3ca59e578).
 * Added back URI decoding for Firefox (f11ea61).
+* Added browser sniffing for Edge & fixes issues with Windows OS detection (20a282a).
 
 1.9.0
 ----------
