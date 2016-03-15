@@ -940,6 +940,22 @@ SC.RenderContext = SC.Builder.create(
     }
   },
 
+  /**
+    Convenience function to set the title attribute. This function will properly
+    escape the attribute value.
+
+    @param {String} value the title attribute value
+    @returns {SC.RenderContext} receiver
+  */
+  title: function (value) {
+    // if we have an element then we don't need to escape jQuery uses setAttribute which escapes for us
+    if (!this._elem) {
+      value = SC.RenderContext.escapeAttributeValue(value);
+    }
+
+    return this.attr('title', value);
+  },
+
   //
   // COREQUERY SUPPORT
   //
@@ -999,7 +1015,23 @@ SC.RenderContext.fn.css = SC.RenderContext.fn.addStyle;
       case '&': return '&amp;';
       case '<': return '&lt;';
       case '>': return '&gt;';
+      case '"': return '&quot;';
+      case "'": return '&#x27;';
+      case '/': return '&#x2f;';
     }
+  };
+
+  var _escapeAttributeRegex = /[^A-Za-z0-9]/g, _escapeAttributeMethod = function (match) {
+    var charCode = match.charCodeAt(0),
+      value = match;
+
+    // replaces all non-alphanumeric characters with an ASCII value less that 256 with their hex equivalent
+    // This protects attribute values in single quotes, double quotes, or with unquoted attributes
+    if (!SC.none(charCode) && charCode < 256) {
+      value = '&#x%@;'.fmt(charCode.toString(16)); // generate &#xHH; e.g. ' => &#x27;
+    }
+
+    return value;
   };
 
 /**
@@ -1015,5 +1047,19 @@ SC.RenderContext.escapeHTML = function(text) {
     if (!text) return '';
     if (SC.typeOf(text) === SC.T_NUMBER) { text = text.toString(); }
     return text.replace(_escapeHTMLRegex, _escapeHTMLMethod);
+};
+
+/**
+  Helper method escapes the passed string to be safely set in an attribute.
+  You should make sure you pass all user-entered data through
+  this method or escapeHTML to avoid errors.
+
+  @param {String|Number} value value to escape
+  @returns {String} string with all HTML values properly escaped for setting as an attribute value
+*/
+SC.RenderContext.escapeAttributeValue = function (value) {
+  if (!value) return '';
+  if (SC.typeOf(value) === SC.T_NUMBER) { value = value.toString(); }
+  return value.replace(_escapeAttributeRegex, _escapeAttributeMethod);
 };
 })();

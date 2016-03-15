@@ -17,8 +17,11 @@ SC.BaseTheme.panelRenderDelegate = SC.RenderDelegate.create({
     var ariaLabel = dataSource.get('ariaLabel'),
         ariaLabelledBy = dataSource.get('ariaLabelledBy'),
         ariaDescribedBy = dataSource.get('ariaDescribedBy');
-    
-    if(ariaLabel) context.attr('aria-label', ariaLabel);
+
+    if(ariaLabel) {
+      ariaLabel = SC.RenderContext.escapeAttributeValue(ariaLabel);
+      context.attr('aria-label', ariaLabel);
+    }
     if (ariaLabelledBy) context.attr('aria-labelledby', ariaLabelledBy);
     if (ariaDescribedBy) context.attr('aria-describedby', ariaDescribedBy);
   },
