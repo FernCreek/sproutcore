@@ -315,7 +315,10 @@ SC.routes = SC.Object.create(
     // Remove the '#' prefix
     loc = (loc && loc.length > 0) ? loc.slice(1, loc.length) : '';
 
-    loc = decodeURI(loc);
+    if (!(SC.browser.name === SC.BROWSER.firefox && SC.browser.compare(SC.browser.version, "41.0") < 0)) {
+      //Firefox 40 and under all automatically decode the hash.
+      loc = decodeURI(loc);
+    }
 
     if (this.get('location') !== loc && !this._skipRoute) {
       SC.run(function() {
