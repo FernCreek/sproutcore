@@ -80,6 +80,9 @@ SC.Event = function(originalEvent) {
   // Normalize wheel delta values for mousewheel events
   if (this.type === 'mousewheel' || this.type === 'DOMMouseScroll' || this.type === 'MozMousePixelScroll') {
     var deltaMultiplier = SC.Event.MOUSE_WHEEL_MULTIPLIER;
+    var browserHasNegativeYDelta = SC.browser.name === SC.BROWSER.ie ||
+                                   SC.browser.name === SC.BROWSER.opera ||
+                                   SC.browser.name === SC.BROWSER.edge;
 
     // normalize wheelDelta, wheelDeltaX, & wheelDeltaY for Safari
     if (SC.browser.isWebkit && originalEvent.wheelDelta !== undefined) {
@@ -101,7 +104,7 @@ SC.Event = function(originalEvent) {
 
     // handle all other legacy browser
     } else {
-      this.wheelDelta = this.wheelDeltaY = SC.browser.isIE || SC.browser.isOpera ? 0-originalEvent.wheelDelta : originalEvent.wheelDelta ;
+      this.wheelDelta = this.wheelDeltaY = browserHasNegativeYDelta ? 0-originalEvent.wheelDelta : originalEvent.wheelDelta ;
       this.wheelDeltaX = 0 ;
     }
 
