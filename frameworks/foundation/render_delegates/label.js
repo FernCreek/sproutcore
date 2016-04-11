@@ -42,7 +42,8 @@ SC.BaseTheme.labelRenderDelegate = SC.RenderDelegate.create({
 
     var toolTip = dataSource.get('toolTip');
     if (toolTip) {
-      context.title(toolTip);
+      //context.title(toolTip);
+      context.attr('title', toolTip);
     }
 
     /*
