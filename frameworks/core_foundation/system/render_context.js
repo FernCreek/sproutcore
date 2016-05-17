@@ -50,8 +50,7 @@ SC.COMBO_STYLES = {
   context.begin() <-- begins a new tag context
   context.end() <-- ends the tag context...
 */
-SC.RenderContext = SC.Builder.create(
-  /** @lends SC.RenderContext */ {
+SC.RenderContext = SC.Builder.create({
 
   SELF_CLOSING: SC.CoreSet.create().addEach(['area', 'base', 'basefront', 'br', 'hr', 'input', 'img', 'link', 'meta']),
 
@@ -184,42 +183,96 @@ SC.RenderContext = SC.Builder.create(
   },
 
   /**
-    Adds a string to the render context for later joining.  Note that you can
+    Adds a string to the render context for later joining. Note that you can
     pass multiple arguments to this method and each item will be pushed.
+    This function is deprecated as it will never escape HTML special characters.
+    You should use {@link safeContent} instead.
 
-    @param {String} line the liene to add to the string.
-    @returns {SC.RenderContext} receiver
-  */
-  push: function(line) {
-    var strings = this.strings, len = arguments.length;
-    if (!strings) this.strings = strings = []; // create array lazily
+    @deprecated
+    @param {...String} line - The line to push.
+    @returns {SC.RenderContext} - The receiver
+   */
+  push: function (line) {
+    var args = [false]; // prevent escaping to preserve old behavior
+    var len = arguments.length, idx;
 
-    if (len > 1) {
-      strings.push.apply(strings, arguments) ;
-    } else strings.push(line);
+    for (idx = 0; idx < len; ++idx) {
+      args.push(arguments[idx]);
+    }
 
-    // adjust string length for context and all parents...
-    var c = this;
-    while(c) { c.length += len; c = c.prevObject; }
-
-    this.needsContent = YES;
-
-    return this;
+    return this.safeContent.apply(this, args);
   },
 
   /**
-    Pushes the passed string onto the array, but first escapes the string
-    to ensure that no user-entered HTML is processed as HTML.
+    Alias for {@link push}, so see its docs.
+    @deprecated
+    @param {...String} line - The line to push.
+    @returns {SC.RenderContext} - The receiver
+   */
+  html: function (line) {
+    return this.push.apply(this, arguments); // TODO_JA - verify that this works
+  },
 
-    @param {String} line one or mroe lines of text to add
+  /**
+    Pushes all passed strings after escaping them. It is preferred that you use
+    {@link safeContent} instead.
+
+    @deprecated
+    @param {...String} line The line to push.
     @returns {SC.RenderContext} receiver
   */
   text: function(line) {
-    var len = arguments.length, idx=0;
-    for(idx=0;idx<len;idx++) {
-      this.push(SC.RenderContext.escapeHTML(arguments[idx]));
+    return this.safeContent.apply(this, arguments);
+  },
+
+  /**
+    Accepts any number of strings and pushes them to this context. By
+    default will escape each string. This can be controlled by passing
+    a boolean as the first argument. This is the preferred method for
+    adding content.
+
+    @param {Boolean} [escape=true] - If the passed lines should be escaped
+    @param {...String} line - The line to push.
+    @returns {SC.RenderContext} - The receiver
+   */
+  safeContent: function (escape, line) {
+   // first normalize the arguments
+    var lines  = [];
+
+    // handle escape default value
+    if (SC.typeOf(escape) === SC.T_STRING) {
+      lines.push(escape);
+      escape = true;
     }
-    return this ;
+
+    // handle remaining arguments
+    var len = arguments.length, idx;
+    if (len > 1) {
+      for (idx = 1; idx < len; ++idx) {
+        lines.push(arguments[idx]);
+      }
+    }
+
+    // ensure we have context's list of string
+    if (!this.strings) {
+      this.strings = [];
+    }
+
+    lines.forEach(function (line) {
+      if (escape) {
+        line = SC.RenderContext.escapeHTML(line);
+      }
+      this.strings.push(line);
+    }, this);
+
+    // adjust string length for context and all parents...
+    var c = this;
+    var lenOffset = lines.length;
+    while(c) { c.length += lenOffset; c = c.prevObject; }
+
+    this.needsContent = true;
+
+    return this;
   },
 
   /**
@@ -459,10 +512,11 @@ SC.RenderContext = SC.Builder.create(
   /**
     Reads the outer tag id if no param is passed, sets the id otherwise.
 
-    @param {String} idName the id or set
-    @returns {String|SC.RenderContext} id or receiver
+    @private
+    @param {String} [idName] - the id to set
+    @returns {String|SC.RenderContext} - The id or the receiver
   */
-  id: function(idName) {
+  _idBase: function(idName) {
     if (idName === undefined) {
       if (!this._id && this._elem) this._id = this._elem.id;
       return this._id ;
@@ -473,107 +527,133 @@ SC.RenderContext = SC.Builder.create(
     }
   },
 
+  /**
+    Getter/Setter for the id. Will unsafely set the id without escaping
+
+    @deprecated
+    @param {String} [idName] - The value to set the id as
+    @returns {String|SC.RenderContext} - The id or the receiver
+   */
+  id: function (idName) {
+    return this._idBase(idName);
+  },
+
+  /**
+    Safe Getter/Setter for the id. Escapes the input if setting the id.
+
+    @param {String} [idName] - The value to set the id as
+    @param {Boolean} [escape=true] - If the new id should be escaped
+    @returns {String|SC.RenderContext} - The id or the receiver
+   */
+  safeId: function (idName, escape) {
+    escape = escape !== undefined ? escape : true;
+    if (!this._elem && escape) {
+      idName = SC.RenderContext.escapeAttributeValue(idName);
+    }
+    return this._idBase(idName);
+  },
+
   // ..........................................................
   // CSS CLASS NAMES SUPPORT
   //
 
   /**
-    Reads the current classNames array or sets the array if a param is passed.
-    Note that if you get the classNames array and then modify it, you MUST
-    call this method again to set the array or else it may not be copied to
-    the element.
+    Returns the list of class names when we have no backing element.
 
-    If you do pass a classNames array, you can also pass YES for the
-    cloneOnModify param.  This will cause the context to clone the class names
-    before making any further edits.  This is useful is you have a shared
-    array of class names you want to start with but edits should not change
-    the shared array.
-
-    @param {Array} classNames array
-    @param {Boolean} cloneOnModify
-    @returns {Array|SC.RenderContext} classNames array or receiver
-  */
-  classNames: function(classNames, cloneOnModify) {
-    if (this._elem) {
-      if (classNames) {
-        this.$().resetClassNames().addClass(classNames);
-        return this;
-      } else {
-        return this.$().attr('class').split(' ');
-      }
+    @returns {String[]} - The class names array
+    @private
+   */
+  _getClassesNoElement: function () {
+    // if there are no class names, create an empty array
+    if (!this._classNames) {
+      this._classNames = [];
     }
 
-    if (classNames === undefined) {
-      if (this._cloneClassNames) {
-        this._classNames = (this._classNames || []).slice();
-        this._cloneClassNames = NO ;
+    return this._classNames;
+  },
+
+  /**
+    Replaces our list of class names with the passed class names when we have no backing element.
+
+    @param {String[]} classNames - The list of class names to add
+    @param {Boolean} escape - If the class names should be escaped
+    @private
+   */
+  _setClassesNoElement: function (classNames, escape) {
+    this._classNames = [];
+
+    var len, idx, val;
+    for (idx = 0, len = classNames.length; idx < len; ++idx) {
+      val = classNames[idx];
+      if (escape) {
+        val = SC.RenderContext.escapeAttributeValue(val);
       }
-
-      // if there are no class names, create an empty array but don't modify.
-      if (!this._classNames) this._classNames = [];
-
-      return this._classNames ;
-    } else {
-      this._classNames = classNames ;
-      this._cloneClassNames = cloneOnModify || NO ;
-      this._classNamesDidChange = YES ;
-      return this ;
+      this._classNames.push(val);
     }
   },
 
   /**
-    Returns YES if the outer tag current has the passed class name, NO
-    otherwise.
+    Adds the passed class name to our list of class names.
 
-    @param {String} className the class name
-    @returns {Boolean}
-  */
-  hasClass: function(className) {
-    if (this._elem) {
-      return this.$().hasClass(className);
-    }
-    return this.classNames().indexOf(className) >= 0;
+    @param {String} className - The class name to add
+    @private
+   */
+  _addClassNoElement: function (className) {
+    var classes = this._getClassesNoElement();
+    classes.push(className);
   },
 
   /**
-    Adds the specified className to the current tag, if it does not already
-    exist.  This method has no effect if there is no open tag.
+    Removes the passed class name from our list of class names when we have no element.
 
-    If there is an element backing this RenderContext, jQuery is used to
-    perform the update.
+    @param {String} className - The class name to remove
+    @private
+   */
+  _removeClassNoElement: function (className) {
+    var classes = this._getClassesNoElement();
+    var idx = classes.indexOf(className);
 
-    @param {String|Array} nameOrClasses the class name or an array of classes
-    @returns {SC.RenderContext} receiver
-  */
-  addClass: function(nameOrClasses) {
-    if(nameOrClasses === undefined || nameOrClasses === null) {
-      SC.Logger.warn('You are adding an undefined or empty class'+ this.toString());
+    if (idx !== -1) {
+      // if className is found, just null it out.  This will end up adding an
+      // extra space to the generated HTML but it is faster than trying to
+      // recompact the array.
+      classes[idx] = null;
+    }
+  },
+
+  /**
+    Adds the pass class names to the current context.
+
+    @param {String|String[]} classNames - The class name or an array of class names
+    @param {Boolean} [escape=true] - If the class names should be escaped or not
+    @returns {SC.RenderContext} - The receiver
+   */
+  safeAddClass: function (classNames, escape) {
+    // normalize arguments
+    if (SC.empty(classNames)) {
       return this;
     }
 
+    if (SC.typeOf(classNames) === SC.T_STRING) {
+      classNames = [classNames];
+    }
+
+    var len = classNames.length, idx, $elem, entry;
     if (this._elem) {
-      if (SC.typeOf(nameOrClasses) === SC.T_STRING) {
-        this.$().addClass(nameOrClasses);
-      } else {
-        var idx, len = nameOrClasses.length;
-        for (idx = 0; idx < len; idx++) this.$().addClass(nameOrClasses[idx]);
-      }
-      return this;
-    }
-
-    var classNames = this.classNames() ; // handles cloning ,etc.
-    if(SC.typeOf(nameOrClasses) === SC.T_STRING){
-      if (classNames.indexOf(nameOrClasses)<0) {
-        classNames.push(nameOrClasses);
-        this._classNamesDidChange = YES ;
+      $elem = this.$();
+      for (idx = 0; idx < len; ++idx) {
+        $elem.addClass(classNames[idx]);
       }
     } else {
-      var cl;
-      for(var i = 0, iLen= nameOrClasses.length; i<iLen; i++){
-        cl = nameOrClasses[i];
-        if (classNames.indexOf(cl)<0) {
-          classNames.push(cl);
-          this._classNamesDidChange = YES ;
+      for (idx = 0; idx < len; ++idx) {
+        entry = classNames[idx];
+
+        if (escape) {
+          entry = SC.RenderContext.escapeAttributeValue(entry);
+        }
+
+        if (!this.hasClass(entry)) {
+          this._addClassNoElement(entry);
         }
       }
     }
@@ -585,99 +665,167 @@ SC.RenderContext = SC.Builder.create(
     Removes the specified className from the current tag.  This method has
     no effect if there is not an open tag.
 
-    If there is an actual DOM element backing this render context,
-    the modification will be written immediately to a jQuery instance.
-
-    @param {String} className the class to add
-    @returns {SC.RenderContext} receiver
-  */
+    @param {String} className - The class to add
+    @returns {SC.RenderContext} - The receiver
+   */
   removeClass: function(className) {
     if (this._elem) {
       this.$().removeClass(className);
-      return this;
-    }
-
-    var classNames = this._classNames, idx;
-    if (classNames && (idx=classNames.indexOf(className))>=0) {
-      if (this._cloneClassNames) {
-        classNames = this._classNames = classNames.slice();
-        this._cloneClassNames = NO ;
-      }
-
-      // if className is found, just null it out.  This will end up adding an
-      // extra space to the generated HTML but it is faster than trying to
-      // recompact the array.
-      classNames[idx] = null;
-      this._classNamesDidChange = YES ;
+    } else {
+      // remove the passed class & its escaped version, in case the user is always relying on us for escaping
+      this._removeClassNoElement(className);
+      this._removeClassNoElement(SC.RenderContext.escapeAttributeValue(className));
     }
 
     return this;
   },
 
   /**
-    Removes all classnames from the context. If the context represents an
-    element, this will be handled in CoreQuery.
+    Returns if the outer tag current has the passed class name.
 
-    @returns {SC.RenderContext} receiver
+    @param {String} className - The class name to check
+    @returns {Boolean} - If the outer tag has the passed class name
+   */
+  hasClass: function(className) {
+    var has;
+
+    if (this._elem) {
+      has = this.$().hasClass(className);
+    } else {
+      has = this._getClassesNoElement().indexOf(className) !== -1;
+    }
+
+    return has;
+  },
+
+  /**
+    Gets all class names on the current context or replaces them with
+    the passed array of class names.
+
+    @param {String[]} [classNames] - The class names to set on the context
+    @returns {String[]|SC.RenderContext} - The classNames array or the receiver
+    @returns {Array|SC.RenderContext} - classNames array or receiver
   */
+  safeClassNames: function(classNames, escape) {
+    var ret = this;
+
+    escape = escape !== undefined ? escape : true;
+
+    if (classNames) {
+      if (this._elem) {
+        this.resetClassNames();
+        this.safeAddClass(classNames, escape);
+      } else {
+        this._setClassesNoElement(classNames, escape);
+      }
+    } else {
+      if (this._elem) {
+        ret = this.$().attr('class').split(' ');
+      } else {
+        ret = this._getClassesNoElement();
+      }
+    }
+
+    return ret;
+  },
+
+  /**
+    Removes all class names from the context.
+
+    @returns {SC.RenderContext} - The receiver
+   */
   resetClassNames: function() {
     if (this._elem) {
       this.$().removeClass();
-      return this;
+    } else {
+      this._setClassesNoElement([], false);
     }
 
-    this._classNames = [];
-    this._classNamesDidChange = YES ;
     return this;
   },
 
   /**
     You can either pass a single class name and a boolean indicating whether
-    the value should be added or removed, or you can pass a hash with all
+    the value should be added or removed, or you can pass an object with all
     the class names you want to add or remove with a boolean indicating
     whether they should be there or not.
 
-    This is far more efficient than using addClass/removeClass.
+    @param {String|Object} className - The class name or hash of classNames & booleans
+    @param {Boolean} [shouldAdd] - If the className should be added or removed if a string
+    @param {Boolean} [escape=true] - If the class names should be escaped
+    @returns {SC.RenderContext} - The receiver
+   */
+  safeSetClass: function (className, shouldAdd, escape) {
+    // normalize arguments
 
-    @param {String|Hash} className class name or hash of classNames + bools
-    @param {Boolean} shouldAdd for class name if a string was passed
-    @returns {SC.RenderContext} receiver
-  */
-  setClass: function(className, shouldAdd) {
-    if (this._elem) {
-      this.$().setClass(className, shouldAdd);
-      return this;
+    escape = escape !== undefined ? escape : true;
+
+    var tmp;
+    if (SC.typeOf(className) === SC.T_STRING) {
+      tmp = {};
+      tmp[className] = !!shouldAdd;
+      className = tmp;
     }
 
-    var classNames, idx, key, didChange;
-
-    // simple form
-    if (shouldAdd !== undefined) {
-      return shouldAdd ? this.addClass(className) : this.removeClass(className);
-    // bulk form
-    } else {
-      classNames = this._classNames ;
-      if (!classNames) classNames = this._classNames = [];
-
-      if (this._cloneClassNames) {
-        classNames = this._classNames = classNames.slice();
-        this._cloneClassNames = NO ;
-      }
-
-      didChange = NO;
-      for(key in className) {
-        if (!className.hasOwnProperty(key)) continue ;
-        idx = classNames.indexOf(key);
-        if (className[key]) {
-          if (idx<0) { classNames.push(key); didChange = YES; }
+    var key, value;
+    for(key in className) {
+      if(className.hasOwnProperty(key)) {
+        value = className[key];
+        if (value) {
+          this.safeAddClass(value, escape);
         } else {
-          if (idx>=0) { classNames[idx] = null; didChange = YES; }
+          this.removeClass(value);
         }
       }
-      if (didChange) this._classNamesDidChange = YES;
     }
 
-    return this ;
+    return this;
+  },
+
+  // ..........................................................
+  // CSS CLASS NAMES SUPPORT - OLD DEPRECATED API
+  //
+
+  /**
+    Adds the passed class names to the current context. This function
+    is deprecated as it will never escape the class name. Use the
+    safeAddClass function instead.
+
+    @deprecated
+    @param {String|String[]} nameOrClasses - The class name or an array of class names
+    @returns {SC.RenderContext} - The receiver
+   */
+  addClass: function (nameOrClasses) {
+    return this.safeAddClass(nameOrClasses, false);
+  },
+
+  /**
+    Gets all class names on the current context or replaces them with
+    the passed array of class names. This function is deprecated as it
+    will never escape class names. Use safeClassNames instead.
+
+    @deprecated
+    @param {String[]} [classNames] - The class names to set on the context
+    @returns {String[]|SC.RenderContext} - The classNames array or the receiver
+   */
+  classNames: function (classNames) {
+    return this.safeClassNames(classNames, false);
+  },
+
+  /**
+    You can either pass a single class name and a boolean indicating whether
+    the value should be added or removed, or you can pass an object with all
+    the class names you want to add or remove with a boolean indicating
+    whether they should be there or not. This function is deprecated as it
+    will never escape the passed in class names, use safeSetClass instead
+
+    @deprecated
+    @param {String|Object} className - The class name or hash of classNames & booleans
+    @param {Boolean} [shouldAdd] - If the className should be added or removed if a string
+    @returns {SC.RenderContext} - The receiver
+   */
+  setClass: function(className, shouldAdd) {
+    return this.safeSetClass(className, shouldAdd, false);
   },
 
   // ..........................................................
@@ -779,7 +927,6 @@ SC.RenderContext = SC.Builder.create(
     return this;
   },
 
-
   /**
     Apply the passed styles to the tag.  You can pass either a single key
     value pair or a hash of styles.  Note that if you set a style on an
@@ -879,81 +1026,112 @@ SC.RenderContext = SC.Builder.create(
   //
 
   /**
-    Sets the named attribute on the tag.  Note that if you set the 'class'
-    attribute or the 'styles' attribute, it will be ignored.  Use the
-    relevant class name and style methods instead.
+    Accepts an attribute and its value to add to the context or an object of attributes & their values. This function
+    should NOT be used to set the class or style attribute use their specific functions instead.
 
-    @param {String|Hash} nameOrAttrs the attr name or hash of attrs.
-    @param {String} value attribute value if attribute name was passed
-    @returns {SC.RenderContext} receiver
-  */
-  attr: function(nameOrAttrs, value) {
+    @param {String|Object} nameOrAttrs - The attribute or an object of attributes & values to set on the context
+    @param {String|Number} [value] - The value of the attribute to set
+    @param {Boolean} [escape=true] - If the attribute values should be escaped
+    @returns {SC.RenderContext} - The receiver
+   */
+  safeAttr: function (nameOrAttrs, value, escape) {
+    // normalize arguments
+
+    escape = escape !== undefined ? escape : true;
+
+    var tmp;
+    if (SC.typeOf(nameOrAttrs) === SC.T_STRING) {
+      tmp = {};
+      tmp[nameOrAttrs] = value;
+      nameOrAttrs = tmp;
+    }
+
+    // validate input
+    // @if (debug)
+    if (nameOrAttrs.hasOwnProperty('class')) {
+      SC.Logger.warn('Using attribute functions to set class. Should be using class functions instead.');
+    }
+    if (nameOrAttrs.hasOwnProperty('style')) {
+      SC.Logger.warn('Using attribute functions to set style. Should be using style functions instead.');
+    }
+    // @endif
+
+    var key, attrValue;
     if (this._elem) {
-      this.$().attr(nameOrAttrs, value);
-      return this;
-    }
-
-
-    var key, attrs = this._attrs, didChange = NO ;
-    if (!attrs) this._attrs = attrs = {} ;
-
-    // simple form
-    if (typeof nameOrAttrs === SC.T_STRING) {
-      if (value === undefined) { // getter
-        return attrs[nameOrAttrs];
-      } else { // setter
-        if (attrs[nameOrAttrs] !== value) {
-          attrs[nameOrAttrs] = value ;
-          this._attrsDidChange = YES ;
-        }
-      }
-
-    // bulk form
+      this.$().attr(nameOrAttrs);
     } else {
+      if (!this._attrs) {
+        this._attrs = {};
+      }
+
       for(key in nameOrAttrs) {
-        if (!nameOrAttrs.hasOwnProperty(key)) continue ;
-        value = nameOrAttrs[key];
-        if (attrs[key] !== value) {
-          attrs[key] = value ;
-          didChange = YES ;
+        if (nameOrAttrs.hasOwnProperty(key)) {
+          attrValue = nameOrAttrs[key];
+          if (escape) {
+            attrValue = SC.RenderContext.escapeAttributeValue(attrValue);
+          }
+
+          this._attrs[key] = attrValue;
         }
       }
-      if (didChange) this._attrsDidChange = YES ;
     }
 
-    return this ;
+    return this;
   },
 
   /**
-    Sets the named attribute on the tag.  Note that if you set the 'class'
-    attribute or the 'styles' attribute, it will be ignored.  Use the
-    relevant class name and style methods instead.
+    Removes the attribute with the passed name. This should NOT be used to reset styles or class names.
 
-    @param {String|Hash} nameOrAttrs the attr name or hash of attrs.
-    @param {String} value attribute value if attribute name was passed
-    @returns {SC.RenderContext} receiver
-  */
-  removeAttr: function(name) {
+    @param {String} name - The name of the attribute to remove
+    @returns {SC.RenderContext} - The receiver
+   */
+  removeAttr: function (name) {
+    // validate input
+    // @if (debug)
+    if (name === 'class') {
+      SC.Logger.warn('Using removeAttr to clear classes. Should be using class functions instead.');
+    }
+    if (name === 'style') {
+      SC.Logger.warn('Using removeAttr to clear styles. Should be using style functions instead.');
+    }
+    // @endif
+
     if (this._elem) {
       this.$().removeAttr(name);
-      return this;
+    } else if (this._attrs) {
+      delete this._attrs[name];
     }
+
+    return this;
+  },
+
+  // ..........................................................
+  // ARBITRARY ATTRIBUTES SUPPORT - OLD DEPRECATED API
+  //
+
+  /**
+    Accepts an attribute and its value to add to the context or an object of attributes & their values. This function
+    is deprecated as it will never escape attribute values. Use safeAttr instead.
+
+    @deprecated
+    @param {String|Object} nameOrAttrs - The attr name or hash of attrs.
+    @param {String} value - The attribute value if attribute name was passed
+    @returns {SC.RenderContext} - The receiver
+   */
+  attr: function (nameOrAttrs, value) {
+    return this.safeAttr(nameOrAttrs, value, false);
   },
 
   /**
-    Convenience function to set the title attribute. This function will properly
-    escape the attribute value.
+    Convenience function to set the title attribute. This function will escape the attribute value. This function is
+    deprecated. Use safeAttr instead
 
-    @param {String} value the title attribute value
-    @returns {SC.RenderContext} receiver
+    @deprecated
+    @param {String} value - The title attribute value
+    @returns {SC.RenderContext} - The receiver
   */
   title: function (value) {
-    // if we have an element then we don't need to escape jQuery uses setAttribute which escapes for us
-    if (!this._elem) {
-      value = SC.RenderContext.escapeAttributeValue(value);
-    }
-
-    return this.attr('title', value);
+    return this.safeAttr('title', value);
   },
 
   //
@@ -965,6 +1143,7 @@ SC.RenderContext = SC.Builder.create(
     be for nodes matching that selector.
 
     Renderers may use this to modify DOM.
+    @return {jQuery}
    */
   $: function(sel) {
     var ret, elem = this._elem;
@@ -998,11 +1177,6 @@ SC.RenderContext = SC.Builder.create(
   }
 
 });
-
-/**
-  html is an alias for push().  Makes the object more CoreQuery like
-*/
-SC.RenderContext.fn.html = SC.RenderContext.fn.push;
 
 /**
   css is an alias for addStyle().  This this object more CoreQuery like.
