@@ -25,50 +25,50 @@ SC.COMBO_STYLES = {
 };
 
 /**
-  @namespace
+ @namespace
 
-  A RenderContext is a builder that can be used to generate HTML for views or
-  to update an existing element.  Rather than making changes to an element
-  directly, you use a RenderContext to queue up changes to the element,
-  finally applying those changes or rendering the new element when you are
-  finished.
+ A RenderContext is a builder that can be used to generate HTML for views or
+ to update an existing element.  Rather than making changes to an element
+ directly, you use a RenderContext to queue up changes to the element,
+ finally applying those changes or rendering the new element when you are
+ finished.
 
-  You will not usually create a render context yourself but you will be passed
-  a render context as the first parameter of your render() method on custom
-  views.
+ You will not usually create a render context yourself but you will be passed
+ a render context as the first parameter of your render() method on custom
+ views.
 
-  Render contexts are essentially arrays of strings.  You can add a string to
-  the context by calling push().  You can retrieve the entire array as a
-  single string using join().  This is basically the way the context is used
-  for views.  You are passed a render context and expected to add strings of
-  HTML to the context like a normal array.  Later, the context will be joined
-  into a single string and converted into real HTML for display on screen.
+ Render contexts are essentially arrays of strings.  You can add a string to
+ the context by calling push().  You can retrieve the entire array as a
+ single string using join().  This is basically the way the context is used
+ for views.  You are passed a render context and expected to add strings of
+ HTML to the context like a normal array.  Later, the context will be joined
+ into a single string and converted into real HTML for display on screen.
 
-  In addition to the core push and join methods, the render context also
-  supports some extra methods that make it easy to build tags.
+ In addition to the core push and join methods, the render context also
+ supports some extra methods that make it easy to build tags.
 
-  context.begin() <-- begins a new tag context
-  context.end() <-- ends the tag context...
-*/
+ context.begin() <-- begins a new tag context
+ context.end() <-- ends the tag context...
+ */
 SC.RenderContext = SC.Builder.create({
 
   SELF_CLOSING: SC.CoreSet.create().addEach(['area', 'base', 'basefront', 'br', 'hr', 'input', 'img', 'link', 'meta']),
 
   /**
-    When you create a context you should pass either a tag name or an element
-    that should be used as the basis for building the context.  If you pass
-    an element, then the element will be inspected for class names, styles
-    and other attributes.  You can also call update() or replace() to
-    modify the element with you context contents.
+   When you create a context you should pass either a tag name or an element
+   that should be used as the basis for building the context.  If you pass
+   an element, then the element will be inspected for class names, styles
+   and other attributes.  You can also call update() or replace() to
+   modify the element with you context contents.
 
-    If you do not pass any parameters, then we assume the tag name is 'div'.
+   If you do not pass any parameters, then we assume the tag name is 'div'.
 
-    A second parameter, parentContext, is used internally for chaining.  You
-    should never pass a second argument.
+   A second parameter, parentContext, is used internally for chaining.  You
+   should never pass a second argument.
 
-    @param {String|DOMElement} tagNameOrElement
-    @returns {SC.RenderContext} receiver
-  */
+   @param {String|DOMElement} tagNameOrElement
+   @returns {SC.RenderContext} receiver
+   */
   init: function(tagNameOrElement, prevContext) {
     var strings, tagNameOrElementIsString;
 
@@ -123,46 +123,46 @@ SC.RenderContext = SC.Builder.create({
   // NOTE: We store this as an actual array of strings so that browsers that
   // support dense arrays will use them.
   /**
-    The current working array of strings.
+   The current working array of strings.
 
-    @property {Array}
-  */
+   @property {Array}
+   */
   strings: null,
 
   /**
-    this initial offset into the strings array where this context instance
-    has its opening tag.
+   this initial offset into the strings array where this context instance
+   has its opening tag.
 
-    @property {Number}
-  */
+   @property {Number}
+   */
   offset: 0,
 
   /**
-    the current number of strings owned by the context, including the opening
-    tag.
+   the current number of strings owned by the context, including the opening
+   tag.
 
-    @property {Number}
-  */
+   @property {Number}
+   */
   length: 0,
 
   /**
-    Specify the method that should be used to update content on the element.
-    In almost all cases you want to replace the content.  Very carefully
-    managed code (such as in CollectionView) can append or prepend content
-    instead.
+   Specify the method that should be used to update content on the element.
+   In almost all cases you want to replace the content.  Very carefully
+   managed code (such as in CollectionView) can append or prepend content
+   instead.
 
-    You probably do not want to change this property unless you know what you
-    are doing.
+   You probably do not want to change this property unless you know what you
+   are doing.
 
-    @property {String}
-  */
+   @property {String}
+   */
   updateMode: SC.MODE_REPLACE,
 
   /**
-    YES if the context needs its content filled in, not just its outer
-    attributes edited.  This will be set to YES anytime you push strings into
-    the context or if you don't create it with an element to start with.
-  */
+   YES if the context needs its content filled in, not just its outer
+   attributes edited.  This will be set to YES anytime you push strings into
+   the context or if you don't create it with an element to start with.
+   */
   needsContent: NO,
 
   // ..........................................................
@@ -170,27 +170,27 @@ SC.RenderContext = SC.Builder.create({
   //
 
   /**
-    Returns the string at the designated index.  If you do not pass anything
-    returns the string array.  This index is an offset from the start of the
-    strings owned by this context.
+   Returns the string at the designated index.  If you do not pass anything
+   returns the string array.  This index is an offset from the start of the
+   strings owned by this context.
 
-    @param {Number} idx the index
-    @returns {String|Array}
-  */
+   @param {Number} idx the index
+   @returns {String|Array}
+   */
   get: function(idx) {
     var strings = this.strings || [];
     return (idx === undefined) ? strings.slice(this.offset, this.length) : strings[idx+this.offset];
   },
 
   /**
-    Adds a string to the render context for later joining. Note that you can
-    pass multiple arguments to this method and each item will be pushed.
-    This function is deprecated as it will never escape HTML special characters.
-    You should use {@link safeContent} instead.
+   Adds a string to the render context for later joining. Note that you can
+   pass multiple arguments to this method and each item will be pushed.
+   This function is deprecated as it will never escape HTML special characters.
+   You should use {@link safeContent} instead.
 
-    @deprecated
-    @param {...String} line - The line to push.
-    @returns {SC.RenderContext} - The receiver
+   @deprecated
+   @param {...String} line - The line to push.
+   @returns {SC.RenderContext} - The receiver
    */
   push: function (line) {
     var args = [false]; // prevent escaping to preserve old behavior
@@ -204,39 +204,39 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Alias for {@link push}, so see its docs.
-    @deprecated
-    @param {...String} line - The line to push.
-    @returns {SC.RenderContext} - The receiver
+   Alias for {@link push}, so see its docs.
+   @deprecated
+   @param {...String} line - The line to push.
+   @returns {SC.RenderContext} - The receiver
    */
   html: function (line) {
     return this.push.apply(this, arguments); // TODO_JA - verify that this works
   },
 
   /**
-    Pushes all passed strings after escaping them. It is preferred that you use
-    {@link safeContent} instead.
+   Pushes all passed strings after escaping them. It is preferred that you use
+   {@link safeContent} instead.
 
-    @deprecated
-    @param {...String} line The line to push.
-    @returns {SC.RenderContext} receiver
-  */
+   @deprecated
+   @param {...String} line The line to push.
+   @returns {SC.RenderContext} receiver
+   */
   text: function(line) {
     return this.safeContent.apply(this, arguments);
   },
 
   /**
-    Accepts any number of strings and pushes them to this context. By
-    default will escape each string. This can be controlled by passing
-    a boolean as the first argument. This is the preferred method for
-    adding content.
+   Accepts any number of strings and pushes them to this context. By
+   default will escape each string. This can be controlled by passing
+   a boolean as the first argument. This is the preferred method for
+   adding content.
 
-    @param {Boolean} [escape=true] - If the passed lines should be escaped
-    @param {...String} line - The line to push.
-    @returns {SC.RenderContext} - The receiver
+   @param {Boolean} [escape=true] - If the passed lines should be escaped
+   @param {...String} line - The line to push.
+   @returns {SC.RenderContext} - The receiver
    */
   safeContent: function (escape, line) {
-   // first normalize the arguments
+    // first normalize the arguments
     var lines  = [];
 
     // handle escape default value
@@ -276,12 +276,12 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Joins the strings together, returning the result.  But first, this will
-    end any open tags.
+   Joins the strings together, returning the result.  But first, this will
+   end any open tags.
 
-    @param {String} joinChar optional string to use in joins. def empty string
-    @returns {String} joined string
-  */
+   @param {String} joinChar optional string to use in joins. def empty string
+   @returns {String} joined string
+   */
   join: function(joinChar) {
     // generate tag if needed...
     if (this._needsTag) this.end();
@@ -295,29 +295,29 @@ SC.RenderContext = SC.Builder.create({
   //
 
   /**
-    Begins a new render context based on the passed tagName or element.
-    Generate said context using end().
+   Begins a new render context based on the passed tagName or element.
+   Generate said context using end().
 
-    @returns {SC.RenderContext} new context
-  */
+   @returns {SC.RenderContext} new context
+   */
   begin: function(tagNameOrElement) {
     return SC.RenderContext(tagNameOrElement, this);
   },
 
   /**
-    If the current context targets an element, this method returns the
-    element.  If the context does not target an element, this method will
-    render the context into an offscreen element and return it.
+   If the current context targets an element, this method returns the
+   element.  If the context does not target an element, this method will
+   render the context into an offscreen element and return it.
 
-    @returns {DOMElement} the element
-  */
+   @returns {DOMElement} the element
+   */
   element: function() {
     return this._elem ? this._elem : SC.$(this.join())[0];
   },
 
   /**
-    Removes an element with the passed id in the currently managed element.
-  */
+   Removes an element with the passed id in the currently managed element.
+   */
   remove: function(elementId) {
     if (!elementId) return ;
 
@@ -332,22 +332,22 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    If an element was set on this context when it was created, this method
-    will actually apply any changes to the element itself.  If you have not
-    written any inner html into the context, then the innerHTML of the
-    element will not be changed, otherwise it will be replaced with the new
-    innerHTML.
+   If an element was set on this context when it was created, this method
+   will actually apply any changes to the element itself.  If you have not
+   written any inner html into the context, then the innerHTML of the
+   element will not be changed, otherwise it will be replaced with the new
+   innerHTML.
 
-    Also, any attributes, id, classNames or styles you've set will be
-    updated as well.  This also ends the editing context session and cleans
-    up.
+   Also, any attributes, id, classNames or styles you've set will be
+   updated as well.  This also ends the editing context session and cleans
+   up.
 
-    @returns {SC.RenderContext} previous context or null if top
-  */
+   @returns {SC.RenderContext} previous context or null if top
+   */
   update: function() {
     var elem = this._elem,
-        mode = this.updateMode,
-        cq, value, factory, cur, next;
+      mode = this.updateMode,
+      cq, value, factory, cur, next;
 
     this._innerHTMLReplaced = NO;
 
@@ -392,16 +392,16 @@ SC.RenderContext = SC.Builder.create({
   _DEFAULT_ATTRS: {},
 
   /**
-    Ends the current tag editing context.  This will generate the tag string
-    including any attributes you might have set along with a closing tag.
+   Ends the current tag editing context.  This will generate the tag string
+   including any attributes you might have set along with a closing tag.
 
-    The generated HTML will be added to the render context strings.  This will
-    also return the previous context if there is one or the receiver.
+   The generated HTML will be added to the render context strings.  This will
+   also return the previous context if there is one or the receiver.
 
-    If you do not have a current tag, this does nothing.
+   If you do not have a current tag, this does nothing.
 
-    @returns {SC.RenderContext}
-  */
+   @returns {SC.RenderContext}
+   */
   end: function() {
     // NOTE: If you modify this method, be careful to consider memory usage
     // and performance here.  This method is called frequently during renders
@@ -411,8 +411,8 @@ SC.RenderContext = SC.Builder.create({
 
     // get attributes first.  Copy in className + styles...
     var tag = '', styleStr='', pair, joined, key , value,
-        attrs = this._attrs, className = this._classNames,
-        id = this._id, styles = this._styles, strings, selfClosing;
+      attrs = this._attrs, className = this._classNames,
+      id = this._id, styles = this._styles, strings, selfClosing;
 
     // add tag to tag array
     tag = '<' + this._tagName ;
@@ -478,12 +478,12 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Generates a tag with the passed options.  Like calling context.begin().end().
+   Generates a tag with the passed options.  Like calling context.begin().end().
 
-    @param {String} tagName optional tag name.  default 'div'
-    @param {Hash} opts optional tag options.  defaults to empty options.
-    @returns {SC.RenderContext} receiver
-  */
+   @param {String} tagName optional tag name.  default 'div'
+   @param {Hash} opts optional tag options.  defaults to empty options.
+   @returns {SC.RenderContext} receiver
+   */
   tag: function(tagName, opts) {
     return this.begin(tagName, opts).end();
   },
@@ -493,11 +493,11 @@ SC.RenderContext = SC.Builder.create({
   //
 
   /**
-    Reads outer tagName if no param is passed, sets tagName otherwise.
+   Reads outer tagName if no param is passed, sets tagName otherwise.
 
-    @param {String} tagName pass to set tag name.
-    @returns {String|SC.RenderContext} tag name or receiver
-  */
+   @param {String} tagName pass to set tag name.
+   @returns {String|SC.RenderContext} tag name or receiver
+   */
   tagName: function(tagName) {
     if (tagName === undefined) {
       if (!this._tagName && this._elem) this._tagName = this._elem.tagName;
@@ -510,12 +510,12 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Reads the outer tag id if no param is passed, sets the id otherwise.
+   Reads the outer tag id if no param is passed, sets the id otherwise.
 
-    @private
-    @param {String} [idName] - the id to set
-    @returns {String|SC.RenderContext} - The id or the receiver
-  */
+   @private
+   @param {String} [idName] - the id to set
+   @returns {String|SC.RenderContext} - The id or the receiver
+   */
   _idBase: function(idName) {
     if (idName === undefined) {
       if (!this._id && this._elem) this._id = this._elem.id;
@@ -528,26 +528,26 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Getter/Setter for the id. Will unsafely set the id without escaping
+   Getter/Setter for the id. Will unsafely set the id without escaping
 
-    @deprecated
-    @param {String} [idName] - The value to set the id as
-    @returns {String|SC.RenderContext} - The id or the receiver
+   @deprecated
+   @param {String} [idName] - The value to set the id as
+   @returns {String|SC.RenderContext} - The id or the receiver
    */
   id: function (idName) {
     return this._idBase(idName);
   },
 
   /**
-    Safe Getter/Setter for the id. Escapes the input if setting the id.
+   Safe Getter/Setter for the id. Escapes the input if setting the id.
 
-    @param {String} [idName] - The value to set the id as
-    @param {Boolean} [escape=true] - If the new id should be escaped
-    @returns {String|SC.RenderContext} - The id or the receiver
+   @param {String} [idName] - The value to set the id as
+   @param {Boolean} [escape=true] - If the new id should be escaped
+   @returns {String|SC.RenderContext} - The id or the receiver
    */
   safeId: function (idName, escape) {
     escape = escape !== undefined ? escape : true;
-    if (!this._elem && escape) {
+    if (idName && !this._elem && escape) {
       idName = SC.RenderContext.escapeAttributeValue(idName);
     }
     return this._idBase(idName);
@@ -558,10 +558,10 @@ SC.RenderContext = SC.Builder.create({
   //
 
   /**
-    Returns the list of class names when we have no backing element.
+   Returns the list of class names when we have no backing element.
 
-    @returns {String[]} - The class names array
-    @private
+   @returns {String[]} - The class names array
+   @private
    */
   _getClassesNoElement: function () {
     // if there are no class names, create an empty array
@@ -573,11 +573,11 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Replaces our list of class names with the passed class names when we have no backing element.
+   Replaces our list of class names with the passed class names when we have no backing element.
 
-    @param {String[]} classNames - The list of class names to add
-    @param {Boolean} escape - If the class names should be escaped
-    @private
+   @param {String[]} classNames - The list of class names to add
+   @param {Boolean} escape - If the class names should be escaped
+   @private
    */
   _setClassesNoElement: function (classNames, escape) {
     this._classNames = [];
@@ -593,10 +593,10 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Adds the passed class name to our list of class names.
+   Adds the passed class name to our list of class names.
 
-    @param {String} className - The class name to add
-    @private
+   @param {String} className - The class name to add
+   @private
    */
   _addClassNoElement: function (className) {
     var classes = this._getClassesNoElement();
@@ -604,10 +604,10 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Removes the passed class name from our list of class names when we have no element.
+   Removes the passed class name from our list of class names when we have no element.
 
-    @param {String} className - The class name to remove
-    @private
+   @param {String} className - The class name to remove
+   @private
    */
   _removeClassNoElement: function (className) {
     var classes = this._getClassesNoElement();
@@ -622,17 +622,19 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Adds the pass class names to the current context.
+   Adds the pass class names to the current context.
 
-    @param {String|String[]} classNames - The class name or an array of class names
-    @param {Boolean} [escape=true] - If the class names should be escaped or not
-    @returns {SC.RenderContext} - The receiver
+   @param {String|String[]} classNames - The class name or an array of class names
+   @param {Boolean} [escape=true] - If the class names should be escaped or not
+   @returns {SC.RenderContext} - The receiver
    */
   safeAddClass: function (classNames, escape) {
     // normalize arguments
     if (SC.empty(classNames)) {
       return this;
     }
+
+    escape = escape !== undefined ? escape : true;
 
     if (SC.typeOf(classNames) === SC.T_STRING) {
       classNames = [classNames];
@@ -652,7 +654,7 @@ SC.RenderContext = SC.Builder.create({
           entry = SC.RenderContext.escapeAttributeValue(entry);
         }
 
-        if (!this.hasClass(entry)) {
+        if (!this._hasClass(entry)) {
           this._addClassNoElement(entry);
         }
       }
@@ -662,11 +664,11 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Removes the specified className from the current tag.  This method has
-    no effect if there is not an open tag.
+   Removes the specified className from the current tag.  This method has
+   no effect if there is not an open tag.
 
-    @param {String} className - The class to add
-    @returns {SC.RenderContext} - The receiver
+   @param {String} className - The class to add
+   @returns {SC.RenderContext} - The receiver
    */
   removeClass: function(className) {
     if (this._elem) {
@@ -681,12 +683,13 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Returns if the outer tag current has the passed class name.
+   Returns if the outer tag current has the passed class name.
 
-    @param {String} className - The class name to check
-    @returns {Boolean} - If the outer tag has the passed class name
+   @private
+   @param {String} className - The class name to check
+   @returns {Boolean} - If the outer tag has the passed class name
    */
-  hasClass: function(className) {
+  _hasClass: function(className) {
     var has;
 
     if (this._elem) {
@@ -698,14 +701,27 @@ SC.RenderContext = SC.Builder.create({
     return has;
   },
 
-  /**
-    Gets all class names on the current context or replaces them with
-    the passed array of class names.
 
-    @param {String[]} [classNames] - The class names to set on the context
-    @returns {String[]|SC.RenderContext} - The classNames array or the receiver
-    @returns {Array|SC.RenderContext} - classNames array or receiver
-  */
+  /**
+   Returns if the outer tag current has the passed class name.
+
+   @param {String} className - The class name to check, can be either escaped or unescaped
+   @returns {Boolean} - If the outer tag has the passed class name
+   */
+  hasClass: function(className) {
+    var has = this._hasClass(className);
+    has = has || this._hasClass(SC.RenderContext.escapeAttributeValue(className));
+    return has;
+  },
+
+  /**
+   Gets all class names on the current context or replaces them with
+   the passed array of class names.
+
+   @param {String[]} [classNames] - The class names to set on the context
+   @param {Boolean} [escape=true]
+   @returns {String[]|SC.RenderContext} - classNames array or receiver
+   */
   safeClassNames: function(classNames, escape) {
     var ret = this;
 
@@ -730,9 +746,9 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Removes all class names from the context.
+   Removes all class names from the context.
 
-    @returns {SC.RenderContext} - The receiver
+   @returns {SC.RenderContext} - The receiver
    */
   resetClassNames: function() {
     if (this._elem) {
@@ -745,15 +761,15 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    You can either pass a single class name and a boolean indicating whether
-    the value should be added or removed, or you can pass an object with all
-    the class names you want to add or remove with a boolean indicating
-    whether they should be there or not.
+   You can either pass a single class name and a boolean indicating whether
+   the value should be added or removed, or you can pass an object with all
+   the class names you want to add or remove with a boolean indicating
+   whether they should be there or not.
 
-    @param {String|Object} className - The class name or hash of classNames & booleans
-    @param {Boolean} [shouldAdd] - If the className should be added or removed if a string
-    @param {Boolean} [escape=true] - If the class names should be escaped
-    @returns {SC.RenderContext} - The receiver
+   @param {String|Object} className - The class name or hash of classNames & booleans
+   @param {Boolean} [shouldAdd] - If the className should be added or removed if a string
+   @param {Boolean} [escape=true] - If the class names should be escaped
+   @returns {SC.RenderContext} - The receiver
    */
   safeSetClass: function (className, shouldAdd, escape) {
     // normalize arguments
@@ -772,9 +788,9 @@ SC.RenderContext = SC.Builder.create({
       if(className.hasOwnProperty(key)) {
         value = className[key];
         if (value) {
-          this.safeAddClass(value, escape);
+          this.safeAddClass(key, escape);
         } else {
-          this.removeClass(value);
+          this.removeClass(key);
         }
       }
     }
@@ -787,42 +803,42 @@ SC.RenderContext = SC.Builder.create({
   //
 
   /**
-    Adds the passed class names to the current context. This function
-    is deprecated as it will never escape the class name. Use the
-    safeAddClass function instead.
+   Adds the passed class names to the current context. This function
+   is deprecated as it will never escape the class name. Use the
+   safeAddClass function instead.
 
-    @deprecated
-    @param {String|String[]} nameOrClasses - The class name or an array of class names
-    @returns {SC.RenderContext} - The receiver
+   @deprecated
+   @param {String|String[]} nameOrClasses - The class name or an array of class names
+   @returns {SC.RenderContext} - The receiver
    */
   addClass: function (nameOrClasses) {
     return this.safeAddClass(nameOrClasses, false);
   },
 
   /**
-    Gets all class names on the current context or replaces them with
-    the passed array of class names. This function is deprecated as it
-    will never escape class names. Use safeClassNames instead.
+   Gets all class names on the current context or replaces them with
+   the passed array of class names. This function is deprecated as it
+   will never escape class names. Use safeClassNames instead.
 
-    @deprecated
-    @param {String[]} [classNames] - The class names to set on the context
-    @returns {String[]|SC.RenderContext} - The classNames array or the receiver
+   @deprecated
+   @param {String[]} [classNames] - The class names to set on the context
+   @returns {String[]|SC.RenderContext} - The classNames array or the receiver
    */
   classNames: function (classNames) {
     return this.safeClassNames(classNames, false);
   },
 
   /**
-    You can either pass a single class name and a boolean indicating whether
-    the value should be added or removed, or you can pass an object with all
-    the class names you want to add or remove with a boolean indicating
-    whether they should be there or not. This function is deprecated as it
-    will never escape the passed in class names, use safeSetClass instead
+   You can either pass a single class name and a boolean indicating whether
+   the value should be added or removed, or you can pass an object with all
+   the class names you want to add or remove with a boolean indicating
+   whether they should be there or not. This function is deprecated as it
+   will never escape the passed in class names, use safeSetClass instead
 
-    @deprecated
-    @param {String|Object} className - The class name or hash of classNames & booleans
-    @param {Boolean} [shouldAdd] - If the className should be added or removed if a string
-    @returns {SC.RenderContext} - The receiver
+   @deprecated
+   @param {String|Object} className - The class name or hash of classNames & booleans
+   @param {Boolean} [shouldAdd] - If the className should be added or removed if a string
+   @returns {SC.RenderContext} - The receiver
    */
   setClass: function(className, shouldAdd) {
     return this.safeSetClass(className, shouldAdd, false);
@@ -835,19 +851,19 @@ SC.RenderContext = SC.Builder.create({
   _STYLE_REGEX: /-?\s*([^:\s]+)\s*:\s*([^;]+)\s*;?/g,
 
   /**
-    Retrieves or sets the current styles for the outer tag.  If you retrieve
-    the styles hash to edit it, you must set the hash again in order for it
-    to be applied to the element on rendering.
+   Retrieves or sets the current styles for the outer tag.  If you retrieve
+   the styles hash to edit it, you must set the hash again in order for it
+   to be applied to the element on rendering.
 
-    Optionally you can also pass YES to the cloneOnModify param to cause the
-    styles has to be cloned before it is edited.  This is useful if you want
-    to start with a shared style hash and then optionally modify it for each
-    context.
+   Optionally you can also pass YES to the cloneOnModify param to cause the
+   styles has to be cloned before it is edited.  This is useful if you want
+   to start with a shared style hash and then optionally modify it for each
+   context.
 
-    @param {Hash} styles styles hash
-    @param {Boolean} cloneOnModify
-    @returns {Hash|SC.RenderContext} styles hash or receiver
-  */
+   @param {Hash} styles styles hash
+   @param {Boolean} cloneOnModify
+   @returns {Hash|SC.RenderContext} styles hash or receiver
+   */
   styles: function(styles, cloneOnModify) {
     var attr, regex, match;
     if (styles === undefined) {
@@ -877,8 +893,8 @@ SC.RenderContext = SC.Builder.create({
           this._styles = {};
         }
 
-      // if there is no element or we do have styles, possibly clone them
-      // before returning.
+        // if there is no element or we do have styles, possibly clone them
+        // before returning.
       } else {
         if (!this._styles) {
           this._styles = {};
@@ -892,7 +908,7 @@ SC.RenderContext = SC.Builder.create({
 
       return this._styles ;
 
-    // set the styles if passed.
+      // set the styles if passed.
     } else {
       this._styles = styles ;
       this._cloneStyles = cloneOnModify || NO ;
@@ -903,7 +919,7 @@ SC.RenderContext = SC.Builder.create({
 
   _deleteComboStyles: function(styles, key) {
     var comboStyles = SC.COMBO_STYLES[key],
-        didChange = NO, tmp;
+      didChange = NO, tmp;
 
     if (comboStyles) {
 
@@ -919,8 +935,8 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Clears all of the tag's styles.
-    @returns {SC.RenderContext} receiver
+   Clears all of the tag's styles.
+   @returns {SC.RenderContext} receiver
    */
   resetStyles: function() {
     this.styles({});
@@ -928,14 +944,14 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Apply the passed styles to the tag.  You can pass either a single key
-    value pair or a hash of styles.  Note that if you set a style on an
-    existing element, it will replace any existing styles on the element.
+   Apply the passed styles to the tag.  You can pass either a single key
+   value pair or a hash of styles.  Note that if you set a style on an
+   existing element, it will replace any existing styles on the element.
 
-    @param {String|Hash} nameOrStyles the style name or a hash of styles
-    @param {String|Number} value style value if string name was passed
-    @returns {SC.RenderContext} receiver
-  */
+   @param {String|Hash} nameOrStyles the style name or a hash of styles
+   @param {String|Number} value style value if string name was passed
+   @returns {SC.RenderContext} receiver
+   */
   addStyle: function(nameOrStyles, value) {
     var key, didChange = NO, styles;
 
@@ -978,7 +994,7 @@ SC.RenderContext = SC.Builder.create({
         if (didChange) this._stylesDidChange = YES;
       }
 
-    // bulk form
+      // bulk form
     } else {
       for(key in nameOrStyles) {
         if (!nameOrStyles.hasOwnProperty(key)) continue ;
@@ -996,14 +1012,14 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Removes the named style from the style hash.
+   Removes the named style from the style hash.
 
-    Note that if you delete a style, the style will not actually be removed
-    from the style hash.  Instead, its value will be set to null.
+   Note that if you delete a style, the style will not actually be removed
+   from the style hash.  Instead, its value will be set to null.
 
-    @param {String} styleName
-    @returns {SC.RenderContext} receiver
-  */
+   @param {String} styleName
+   @returns {SC.RenderContext} receiver
+   */
   removeStyle: function(styleName) {
     if (this._elem) {
       this.$().css(styleName, '');
@@ -1026,13 +1042,13 @@ SC.RenderContext = SC.Builder.create({
   //
 
   /**
-    Accepts an attribute and its value to add to the context or an object of attributes & their values. This function
-    should NOT be used to set the class or style attribute use their specific functions instead.
+   Accepts an attribute and its value to add to the context or an object of attributes & their values. This function
+   should NOT be used to set the class or style attribute use their specific functions instead.
 
-    @param {String|Object} nameOrAttrs - The attribute or an object of attributes & values to set on the context
-    @param {String|Number} [value] - The value of the attribute to set
-    @param {Boolean} [escape=true] - If the attribute values should be escaped
-    @returns {SC.RenderContext} - The receiver
+   @param {String|Object} nameOrAttrs - The attribute or an object of attributes & values to set on the context
+   @param {String|Number} [value] - The value of the attribute to set
+   @param {Boolean} [escape=true] - If the attribute values should be escaped
+   @returns {SC.RenderContext} - The receiver
    */
   safeAttr: function (nameOrAttrs, value, escape) {
     // normalize arguments
@@ -1080,10 +1096,10 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /**
-    Removes the attribute with the passed name. This should NOT be used to reset styles or class names.
+   Removes the attribute with the passed name. This should NOT be used to reset styles or class names.
 
-    @param {String} name - The name of the attribute to remove
-    @returns {SC.RenderContext} - The receiver
+   @param {String} name - The name of the attribute to remove
+   @returns {SC.RenderContext} - The receiver
    */
   removeAttr: function (name) {
     // validate input
@@ -1110,26 +1126,26 @@ SC.RenderContext = SC.Builder.create({
   //
 
   /**
-    Accepts an attribute and its value to add to the context or an object of attributes & their values. This function
-    is deprecated as it will never escape attribute values. Use safeAttr instead.
+   Accepts an attribute and its value to add to the context or an object of attributes & their values. This function
+   is deprecated as it will never escape attribute values. Use safeAttr instead.
 
-    @deprecated
-    @param {String|Object} nameOrAttrs - The attr name or hash of attrs.
-    @param {String} value - The attribute value if attribute name was passed
-    @returns {SC.RenderContext} - The receiver
+   @deprecated
+   @param {String|Object} nameOrAttrs - The attr name or hash of attrs.
+   @param {String} value - The attribute value if attribute name was passed
+   @returns {SC.RenderContext} - The receiver
    */
   attr: function (nameOrAttrs, value) {
     return this.safeAttr(nameOrAttrs, value, false);
   },
 
   /**
-    Convenience function to set the title attribute. This function will escape the attribute value. This function is
-    deprecated. Use safeAttr instead
+   Convenience function to set the title attribute. This function will escape the attribute value. This function is
+   deprecated. Use safeAttr instead
 
-    @deprecated
-    @param {String} value - The title attribute value
-    @returns {SC.RenderContext} - The receiver
-  */
+   @deprecated
+   @param {String} value - The title attribute value
+   @returns {SC.RenderContext} - The receiver
+   */
   title: function (value) {
     return this.safeAttr('title', value);
   },
@@ -1138,12 +1154,12 @@ SC.RenderContext = SC.Builder.create({
   // COREQUERY SUPPORT
   //
   /**
-    Returns a CoreQuery instance for the element this context wraps (if
-    it wraps any). If a selector is passed, the CoreQuery instance will
-    be for nodes matching that selector.
+   Returns a CoreQuery instance for the element this context wraps (if
+   it wraps any). If a selector is passed, the CoreQuery instance will
+   be for nodes matching that selector.
 
-    Renderers may use this to modify DOM.
-    @return {jQuery}
+   Renderers may use this to modify DOM.
+   @return {jQuery}
    */
   $: function(sel) {
     var ret, elem = this._elem;
@@ -1154,11 +1170,11 @@ SC.RenderContext = SC.Builder.create({
 
 
   /** @private
-  */
+   */
   _camelizeStyleName: function(name) {
     // IE wants the first letter lowercase so we can allow normal behavior
     var needsCap = name.match(/^-(webkit|moz|o)-/),
-        camelized = SC.String.camelize(name);
+      camelized = SC.String.camelize(name);
 
     if (needsCap) {
       return camelized.substr(0,1).toUpperCase() + camelized.substr(1);
@@ -1168,8 +1184,8 @@ SC.RenderContext = SC.Builder.create({
   },
 
   /** @private
-    Converts camelCased style names to dasherized forms
-  */
+   Converts camelCased style names to dasherized forms
+   */
   _dasherizeStyleName: function(name) {
     var dasherized = SC.String.dasherize(name);
     if (dasherized.match(/^(webkit|moz|ms|o)-/)) { dasherized = '-'+dasherized; }
@@ -1179,8 +1195,8 @@ SC.RenderContext = SC.Builder.create({
 });
 
 /**
-  css is an alias for addStyle().  This this object more CoreQuery like.
-*/
+ css is an alias for addStyle().  This this object more CoreQuery like.
+ */
 SC.RenderContext.fn.css = SC.RenderContext.fn.addStyle;
 
 (function() {
@@ -1208,32 +1224,32 @@ SC.RenderContext.fn.css = SC.RenderContext.fn.addStyle;
     return value;
   };
 
-/**
-  Helper method escapes the passed string to ensure HTML is displayed as
-  plain text.  You should make sure you pass all user-entered data through
-  this method to avoid errors.  You can also do this with the text() helper
-  method on a render context.
+  /**
+   Helper method escapes the passed string to ensure HTML is displayed as
+   plain text.  You should make sure you pass all user-entered data through
+   this method to avoid errors.  You can also do this with the text() helper
+   method on a render context.
 
-  @param {String|Number} text value to escape
-  @returns {String} string with all HTML values properly escaped
-*/
-SC.RenderContext.escapeHTML = function(text) {
+   @param {String|Number} text value to escape
+   @returns {String} string with all HTML values properly escaped
+   */
+  SC.RenderContext.escapeHTML = function(text) {
     if (!text) return '';
     if (SC.typeOf(text) === SC.T_NUMBER) { text = text.toString(); }
     return text.replace(_escapeHTMLRegex, _escapeHTMLMethod);
-};
+  };
 
-/**
-  Helper method escapes the passed string to be safely set in an attribute.
-  You should make sure you pass all user-entered data through
-  this method or escapeHTML to avoid errors.
+  /**
+   Helper method escapes the passed string to be safely set in an attribute.
+   You should make sure you pass all user-entered data through
+   this method or escapeHTML to avoid errors.
 
-  @param {String|Number} value value to escape
-  @returns {String} string with all HTML values properly escaped for setting as an attribute value
-*/
-SC.RenderContext.escapeAttributeValue = function (value) {
-  if (!value) return '';
-  if (SC.typeOf(value) === SC.T_NUMBER) { value = value.toString(); }
-  return value.replace(_escapeAttributeRegex, _escapeAttributeMethod);
-};
+   @param {String|Number} value value to escape
+   @returns {String} string with all HTML values properly escaped for setting as an attribute value
+   */
+  SC.RenderContext.escapeAttributeValue = function (value) {
+    if (!value) return '';
+    if (SC.typeOf(value) === SC.T_NUMBER) { value = value.toString(); }
+    return value.replace(_escapeAttributeRegex, _escapeAttributeMethod);
+  };
 })();

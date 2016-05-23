@@ -8,8 +8,74 @@
 /*global module test equals context ok same same */
 
 var context = null;
+var nameOrAttr;
 
 
+
+// ..........................................................
+// safeAttr()
+//
+module("SC.RenderContext#safeAttr", {
+  setup: function () {
+    context = SC.RenderContext();
+  }
+});
+
+test("should add passed in string to attributes", function() {
+  context.safeAttr('bar', 'bar');
+  equals(context._attrs.bar, 'bar', 'verify attr name');
+});
+
+test("should add and escape passed in string to attributes", function() {
+  context.safeAttr('bar', '\'bar\'');
+  equals(context._attrs.bar, '&#x27;bar&#x27;', 'verify escaped attr name');
+});
+
+test("should add passed in attrs on object to attributes", function() {
+  context.safeAttr({ bar: 'bar'});
+  equals(context._attrs.bar, 'bar', 'verify attr name');
+});
+
+test("should add and escape passed in attrs on object to attributes", function() {
+  context.safeAttr({ bar: '\'bar\''});
+  equals(context._attrs.bar, '&#x27;bar&#x27;', 'verify escaped attr name');
+});
+
+// ..........................................................
+// safeAttr() with a fake element
+//
+module("SC.RenderContext#safeAttrWithElement", {
+  setup: function() {
+    context._elem = true;
+    context.$ = function() {
+      return {
+        attr: function(attr) {
+          nameOrAttr = attr;
+        }
+      };
+    };
+  }
+});
+
+test("should add passed in string to attributes", function() {
+  context.safeAttr('bar', 'bar');
+  equals(nameOrAttr.bar, 'bar', 'verify _elem\'s attr name');
+});
+
+test("should add and escape passed in string to attributes", function() {
+  context.safeAttr('bar', '\'bar\'');
+  equals(nameOrAttr.bar, '\'bar\'', 'verify _elem\'s escaped attr name');
+});
+
+test("should add passed in attrs on object to attributes", function() {
+  context.safeAttr({ bar: 'bar'});
+  equals(nameOrAttr.bar, 'bar', 'verify _elem\'s  attr name');
+});
+
+test("should add and escape passed in attrs on object to attributes", function() {
+  context.safeAttr({ bar: '\'bar\''});
+  equals(nameOrAttr.bar, '\'bar\'', 'verify _elem\'s escaped attr name');
+});
 
 // ..........................................................
 // attr
@@ -46,5 +112,3 @@ test("should assign all attrs if a hash is passed", function() {
   context.attr({ foo: 'bar', bar: 'bar' });
   same(context._attrs, { foo: 'bar', bar: 'bar' }, 'has same styles');
 });
- 
-
