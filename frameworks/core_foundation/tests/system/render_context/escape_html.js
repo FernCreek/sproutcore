@@ -10,11 +10,11 @@ test("Escaping HTML", function() {
   var input = "<p>HTML!</p><script>alert('hi');<" + "/script> & Hello, World!";
   var output = SC.RenderContext.escapeHTML(input);
   
-  equals(output, '&lt;p&gt;HTML!&lt;/p&gt;&lt;script&gt;alert(\'hi\');&lt;/script&gt; &amp; Hello, World!', "Properly escapes HTML");
+  equals(output, '&lt;p&gt;HTML!&lt;&#x2f;p&gt;&lt;script&gt;alert(&#x27;hi&#x27;);&lt;&#x2f;script&gt; &amp; Hello, World!', "Properly escapes HTML");
 });
 
 test("Tests stolen from Prototype.js", function() {
-  var largeTextEscaped = '&lt;span&gt;test&lt;/span&gt;', 
+  var largeTextEscaped = '&lt;span&gt;test&lt;&#x2f;span&gt;',
       largeTextUnescaped = '<span>test</span>';
   for (var i = 0; i < 2048; i++) { 
     largeTextEscaped += ' ABC';
@@ -24,11 +24,11 @@ test("Tests stolen from Prototype.js", function() {
   
   var tests = [
     'foo bar', 'foo bar',
-    'foo <span>bar</span>', 'foo &lt;span&gt;bar&lt;/span&gt;',
+    'foo <span>bar</span>', 'foo &lt;span&gt;bar&lt;&#x2f;span&gt;',
     'foo ß bar', 'foo ß bar',
     'ウィメンズ2007\nクルーズコレクション', 'ウィメンズ2007\nクルーズコレクション',
     'a<a href="blah">blub</a>b<span><div></div></span>cdef<strong>!!!!</strong>g',
-      'a&lt;a href="blah"&gt;blub&lt;/a&gt;b&lt;span&gt;&lt;div&gt;&lt;/div&gt;&lt;/span&gt;cdef&lt;strong&gt;!!!!&lt;/strong&gt;g',
+      'a&lt;a href=&quot;blah&quot;&gt;blub&lt;&#x2f;a&gt;b&lt;span&gt;&lt;div&gt;&lt;&#x2f;div&gt;&lt;&#x2f;span&gt;cdef&lt;strong&gt;!!!!&lt;&#x2f;strong&gt;g',
     '1\n2', '1\n2',
     
     largeTextUnescaped, largeTextEscaped
