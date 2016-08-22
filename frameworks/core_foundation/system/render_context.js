@@ -874,6 +874,31 @@ SC.RenderContext = SC.Builder.create(
     }
   },
 
+  /**
+    Escapes the style or styles before adding them to the render context
+    @param {String|Hash} nameOrStyles the style name or a hash of styles
+    @param {String|Number} value style value if string name was passed
+    @returns {SC.RenderContext} receiver
+  */
+  addStyleSafe: function (nameOrStyles, value) {
+    var key;
+    var newNameOrStyles = {};
+    var newValue = '';
+
+    if (typeof nameOrStyles === SC.T_STRING) {
+      newValue = SC.RenderContext.escapeAttributeValue(value);
+      newNameOrStyles = nameOrStyles;
+    } else {
+      for (key in nameOrStyles) {
+        if (nameOrStyles.hasOwnProperty(key)) {
+          newNameOrStyles[key] = SC.RenderContext.escapeAttributeValue(nameOrStyles[key]);
+        }
+      }
+      newValue = value;
+    }
+    this.addStyle(newNameOrStyles, newValue);
+  },
+
   // ..........................................................
   // ARBITRARY ATTRIBUTES SUPPORT
   //
@@ -1010,7 +1035,7 @@ SC.RenderContext.fn.html = SC.RenderContext.fn.push;
 SC.RenderContext.fn.css = SC.RenderContext.fn.addStyle;
 
 (function() {
-  var _escapeHTMLRegex = /[&<>]/g, _escapeHTMLMethod = function(match) {
+  var _escapeHTMLRegex = /[&<>"'/]/g, _escapeHTMLMethod = function(match) {
     switch(match) {
       case '&': return '&amp;';
       case '<': return '&lt;';
