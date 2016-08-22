@@ -896,7 +896,7 @@ SC.RenderContext = SC.Builder.create(
       }
       newValue = value;
     }
-    this.addStyle(newNameOrStyles, newValue);
+    return this.addStyle(newNameOrStyles, newValue);
   },
 
   // ..........................................................
