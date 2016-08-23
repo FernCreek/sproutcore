@@ -109,3 +109,49 @@ test("addStyle should remove properties that are part of combo properties", func
   equals(context.styles().fooSub, undefined, 'fooSub has no value');
 });
 
+// ..........................................................
+// addStyleSafe
+//
+module("SC.RenderContext#addStyleSafe", {
+  setup: function() {
+    context = SC.RenderContext().styles({ foo: 'foo' }) ;
+  }
+});
+
+test("should add passed style name to value", function() {
+  context.addStyleSafe('bar', '"/><scary>thing</scary>');
+  equals('&#x22;&#x2f;&#x3e;&#x3c;scary&#x3e;thing&#x3c;&#x2f;scary&#x3e;', context.styles().bar, 'verify style name escaping');
+});
+
+test("should replace passed style name  value", function() {
+  context.addStyleSafe('foo', '"/><scary>thing</scary>');
+  equals('&#x22;&#x2f;&#x3e;&#x3c;scary&#x3e;thing&#x3c;&#x2f;scary&#x3e;', context.styles().foo, 'verify style name escaping');
+});
+
+test("should return receiver", function() {
+  equals(context, context.addStyleSafe('foo', 'bar'));
+});
+
+test("should create styles hash if needed", function() {
+  context = SC.RenderContext();
+  equals(context._styles, null, 'precondition - has no styles');
+
+  context.addStyleSafe('foo', '"/><scary>thing</scary>');
+  equals('&#x22;&#x2f;&#x3e;&#x3c;scary&#x3e;thing&#x3c;&#x2f;scary&#x3e;', context.styles().foo, 'has escaped styles');
+});
+
+test("should assign all styles if a hash is passed", function() {
+  context.addStyleSafe({ foo: '"/><scary>thing</scary>', bar: '"/><scary>thing</scary>' });
+  same(context.styles(), { foo: '&#x22;&#x2f;&#x3e;&#x3c;scary&#x3e;thing&#x3c;&#x2f;scary&#x3e;', bar: '&#x22;&#x2f;&#x3e;&#x3c;scary&#x3e;thing&#x3c;&#x2f;scary&#x3e;' }, 'has same escaped styles');
+});
+
+test("addStyle should remove properties that are part of combo properties", function(){
+  SC.COMBO_STYLES = { foo: 'fooSub'.w() };
+  context.styles({ foo: 'foo', fooSub: 'bar' });
+  equals(context.styles().fooSub, 'bar', 'proper starting values');
+  context.addStyleSafe('foo', '"/><scary>thing</scary>');
+  equals(context.styles().foo, '&#x22;&#x2f;&#x3e;&#x3c;scary&#x3e;thing&#x3c;&#x2f;scary&#x3e;', 'foo has new  escaped value');
+  equals(context.styles().fooSub, undefined, 'fooSub has no value');
+});
+
+
