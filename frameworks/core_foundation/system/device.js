@@ -130,15 +130,7 @@ SC.device = SC.Object.create({
       if (!SC.browser.iOS) {
         // in any browser other than iOS, use height vs. width test
         SC.run(function() {
-          if (SC.platform.touch) {
-            if (newSize.height >= newSize.width) {
-              SC.device.set('orientation', SC.PORTRAIT_ORIENTATION);
-            } else {
-              SC.device.set('orientation', SC.LANDSCAPE_ORIENTATION);
-            }
-          } else {
-            SC.device.set('orientation', SC.NO_ORIENTATION);
-          }
+          SC.device.set('orientation', SC.NO_ORIENTATION);
         });
       } else {
         // in mobile safari, because some of its chrome can make the

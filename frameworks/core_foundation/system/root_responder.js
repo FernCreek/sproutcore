@@ -704,74 +704,6 @@ SC.RootResponder = SC.Object.extend(
 
     // do some initial set
     this.set('currentWindowSize', this.computeWindowSize()) ;
-
-    // TODO: Is this workaround still valid?
-    if (SC.browser.os === SC.OS.ios && SC.browser.name === SC.BROWSER.safari) {
-
-      // If the browser is identifying itself as a touch-enabled browser, but
-      // touch events are not present, assume this is a desktop browser doing
-      // user agent spoofing and simulate touch events automatically.
-      if (SC.platform && !SC.platform.touch) {
-        SC.platform.simulateTouchEvents();
-      }
-
-      // Monkey patch RunLoop if we're in MobileSafari
-      var f = SC.RunLoop.prototype.endRunLoop, patch;
-
-      patch = function() {
-        // Call original endRunLoop implementation.
-        if (f) f.apply(this, arguments);
-
-        // This is a workaround for a bug in MobileSafari.
-        // Specifically, if the target of a touchstart event is removed from the DOM,
-        // you will not receive future touchmove or touchend events. What we do is, at the
-        // end of every runloop, check to see if the target of any touches has been removed
-        // from the DOM. If so, we re-append it to the DOM and hide it. We then mark the target
-        // as having been moved, and it is de-allocated in the corresponding touchend event.
-        var touches = SC.RootResponder.responder._touches, touch, elem, target, textNode, view, found = NO;
-        if (touches) {
-          // Iterate through the touches we're currently tracking
-          for (touch in touches) {
-            if (touches[touch]._rescuedElement) continue; // only do once
-
-            target = elem = touches[touch].target;
-
-            // Travel up the hierarchy looking for the document body
-            while (elem && (elem = elem.parentNode) && !found) {
-              found = (elem === document.body);
-            }
-
-            // If we aren't part of the body, move the element back
-            // but make sure we hide it from display.
-            if (!found && target) {
-
-              // Actually clone this node and replace it in the original
-              // layer if needed
-              if (target.parentNode && target.cloneNode) {
-                var clone = target.cloneNode(true);
-                target.parentNode.replaceChild(clone, target);
-                target.swapNode = clone; // save for restore later
-              }
-
-              // Create a holding pen if needed for these views...
-              var pen = SC.touchHoldingPen;
-              if (!pen) {
-                pen = SC.touchHoldingPen = document.createElement('div');
-                pen.style.display = 'none';
-                document.body.appendChild(pen);
-              }
-
-              // move element back into document...
-              pen.appendChild(target);
-
-              // ...and save the element to be garbage collected on touchEnd.
-              touches[touch]._rescuedElement = target;
-            }
-          }
-        }
-      };
-      SC.RunLoop.prototype.endRunLoop = patch;
-    }
   },
 
   // ...........................................................................
@@ -1756,12 +1688,6 @@ SC.RootResponder = SC.Object.extend(
   mousedown: function(evt) {
     var fr;
 
-    if (SC.platform.touch) {
-      evt.allowDefault();
-      this._lastMouseDownCustomHandling = YES;
-      return YES;
-    }
-
     // First, save the click count. The click count resets if the mouse down
     // event occurs more than 250 ms later than the mouse up event or more
     // than 8 pixels away from the mouse down event.
@@ -1815,11 +1741,6 @@ SC.RootResponder = SC.Object.extend(
   */
   mouseup: function(evt) {
     var clickOrDoubleClickDidTrigger=NO;
-    if (SC.platform.touch) {
-      evt.allowDefault();
-      this._lastMouseUpCustomHandling = YES;
-      return YES;
-    }
 
     if (this._drag) {
       this._drag.tryToPerform('mouseUp', evt) ;
@@ -1927,10 +1848,6 @@ SC.RootResponder = SC.Object.extend(
    trigger calls to mouseDragged.
   */
   mousemove: function(evt) {
-    if (SC.platform.touch) {
-      evt.allowDefault();
-      return YES;
-    }
 
     if (SC.browser.isIE) {
       if (this._lastMoveX === evt.clientX && this._lastMoveY === evt.clientY) return;
@@ -2102,20 +2019,7 @@ SC.Touch = function(touch, touchContext) {
   this.identifier = touch.identifier; // for now, our internal id is WebKit's id.
 
   var target = touch.target, targetView;
-  if (target && SC.$(target).hasClass("touch-intercept")) {
-    touch.target.style.webkitTransform = "translate3d(0px,-5000px,0px)";
-    target = document.elementFromPoint(touch.pageX, touch.pageY);
-    if (target) targetView = SC.$(target).view()[0];
-
-    this.hidesTouchIntercept = NO;
-    if (target.tagName === "INPUT") {
-      this.hidesTouchIntercept = touch.target;
-    } else {
-      touch.target.style.webkitTransform = "translate3d(0px,0px,0px)";
-    }
-  } else {
-    targetView = touch.target ? SC.$(touch.target).view()[0] : null;
-  }
+  targetView = touch.target ? SC.$(touch.target).view()[0] : null;
   this.targetView = targetView;
   this.target = target;
   this.hasEnded = NO;

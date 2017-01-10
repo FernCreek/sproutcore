@@ -250,7 +250,6 @@ SC.PopupButtonView = SC.ButtonView.extend(
     var timestamp = new Date().getTime(),
         previousTimestamp = this._menuRenderedTimestamp,
         menu = this.get('instantiatedMenu'),
-        touch = SC.platform.touch,
         targetMenuItem;
     
     // normalize the previousTimestamp: if it is 0, it might as well be now.
@@ -271,7 +270,7 @@ SC.PopupButtonView = SC.ButtonView.extend(
         // mouseDown and mouseUp, we can assume that they are clicking and
         // dragging to the menu item, and we should close the menu if they
         //mouseup anywhere not inside the menu.
-        if (!touch && (timestamp - previousTimestamp > SC.ButtonView.CLICK_AND_HOLD_DELAY)) {
+        if (timestamp - previousTimestamp > SC.ButtonView.CLICK_AND_HOLD_DELAY) {
           menu.remove();
         }
       }

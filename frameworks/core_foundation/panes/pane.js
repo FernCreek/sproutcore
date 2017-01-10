@@ -265,7 +265,6 @@ SC.Pane = SC.View.extend(SC.ResponderContext,
 
     var current=this.get('firstResponder'), isKeyPane=this.get('isKeyPane');
     if (current === view) return this ; // nothing to do
-    if (SC.platform.touch && view && view.kindOf(SC.TextFieldView) && !view.get('focused')) return this;
 
     // if we are currently key pane, then notify key views of change also
     if (isKeyPane) {
@@ -449,9 +448,6 @@ SC.Pane = SC.View.extend(SC.ResponderContext,
     if (dom && dom.parentNode) dom.parentNode.removeChild(dom) ;
     dom = null ;
 
-    // remove intercept
-    this._removeIntercept();
-
     // resign keyPane status, if we had it
     this.resignKeyPane();
 
@@ -521,8 +517,6 @@ SC.Pane = SC.View.extend(SC.ResponderContext,
     // notify that the layers have been appended to the document
     this._notifyDidAppendToDocument();
 
-    // handle intercept if needed
-    this._addIntercept();
     return this ;
   },
 
@@ -543,53 +537,10 @@ SC.Pane = SC.View.extend(SC.ResponderContext,
   isPaneAttached: NO,
 
   /**
-    If YES, a touch intercept pane will be added above this pane when on
-    touch platforms.
-  */
-  wantsTouchIntercept: NO,
-
-  /**
-    Returns YES if wantsTouchIntercept and this is a touch platform.
-  */
-  hasTouchIntercept: function(){
-    return this.get('wantsTouchIntercept') && SC.platform.touch;
-  }.property('wantsTouchIntercept').cacheable(),
-
-  /**
     The Z-Index of the pane. Currently, you have to match this in CSS.
     TODO: ALLOW THIS TO AUTOMATICALLY SET THE Z-INDEX OF THE PANE (as an option).
   */
   zIndex: 0,
-
-  /**
-    The amount over the pane's z-index that the touch intercept should be.
-  */
-  touchZ: 99,
-
-  _addIntercept: function() {
-    if (this.get('hasTouchIntercept')) {
-      var div = document.createElement("div");
-      var divStyle = div.style;
-      divStyle.position = "absolute";
-      divStyle.left = "0px";
-      divStyle.top = "0px";
-      divStyle.right = "0px";
-      divStyle.bottom = "0px";
-      divStyle.webkitTransform = "translateZ(0px)";
-      divStyle.zIndex = this.get("zIndex") + this.get("touchZ");
-      div.className = "touch-intercept";
-      div.id = "touch-intercept-" + SC.guidFor(this);
-      this._touchIntercept = div;
-      document.body.appendChild(div);
-    }
-  },
-
-  _removeIntercept: function() {
-    if (this._touchIntercept) {
-      document.body.removeChild(this._touchIntercept);
-      this._touchIntercept = null;
-    }
-  },
 
   hideTouchIntercept: function() {
     if (this._touchIntercept) this._touchIntercept.style.display = "none";
@@ -666,12 +617,6 @@ SC.Pane = SC.View.extend(SC.ResponderContext,
 
   /** @private */
   init: function() {
-    // Backwards compatibility
-    if (this.hasTouchIntercept === YES) {
-      SC.Logger.warn("Do not set hasTouchIntercept directly. Use wantsTouchIntercept instead.");
-      this.hasTouchIntercept = SC.platform.touch;
-    }
-
     // if a layer was set manually then we will just attach to existing
     // HTML.
     var hasLayer = !!this.get('layer') ;
