@@ -140,27 +140,8 @@ SC.Pane = SC.View.extend(SC.ResponderContext,
     // walk up the responder chain looking for a method to handle the event
     if (!target) target = this.get('firstResponder') ;
     while(target) {
-      if (action === 'touchStart') {
-        // first, we must check that the target is not already touch responder
-        // if it is, we don't want to have "found" it; that kind of recursion is sure to
-        // cause really severe, and even worse, really odd bugs.
-        if (evt.touchResponder === target) {
-          target = null;
-          break;
-        }
 
-        // now, only pass along if the target does not already have any touches, or is
-        // capable of accepting multitouch.
-        if (!target.get("hasTouch") || target.get("acceptsMultitouch")) {
-          if (target.tryToPerform("touchStart", evt)) break;
-        }
-      } else if (action === 'touchEnd' && !target.get("acceptsMultitouch")) {
-        if (!target.get("hasTouch")) {
-          if (target.tryToPerform("touchEnd", evt)) break;
-        }
-      } else {
-        if (target.tryToPerform(action, evt)) break;
-      }
+      if (target.tryToPerform(action, evt)) break;
 
       // even if someone tries to fill in the nextResponder on the pane, stop
       // searching when we hit the pane.
@@ -541,14 +522,6 @@ SC.Pane = SC.View.extend(SC.ResponderContext,
     TODO: ALLOW THIS TO AUTOMATICALLY SET THE Z-INDEX OF THE PANE (as an option).
   */
   zIndex: 0,
-
-  hideTouchIntercept: function() {
-    if (this._touchIntercept) this._touchIntercept.style.display = "none";
-  },
-
-  showTouchIntercept: function() {
-    if (this._touchIntercept) this._touchIntercept.style.display = "block";
-  },
 
   /**
     Updates the isVisibleInWindow state on the pane and its childViews if

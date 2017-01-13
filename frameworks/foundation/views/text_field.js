@@ -975,26 +975,12 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     this.becomeFirstResponder(evt);
 
     this.beginEditing(evt);
-
-    // We have to hide the intercept pane, as it blocks the events.
-    // However, show any that we previously hid, first just in case something wacky happened.
-    if (this._didHideInterceptForPane) {
-      this._didHideInterceptForPane.showTouchIntercept();
-      this._didHideInterceptForPane = null;
-    }
   },
 
   fieldDidBlur: function (evt) {
     this.resignFirstResponder(evt) ;
 
     if (this.get('commitOnBlur')) this.commitEditing(evt);
-
-    // get the pane we hid intercept pane for (if any)
-    var touchPane = this._didHideInterceptForPane;
-    if (touchPane) {
-      touchPane.showTouchIntercept();
-      touchPane = null;
-    }
   },
 
   /** @private */
