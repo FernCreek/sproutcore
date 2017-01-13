@@ -151,7 +151,13 @@ SC.platform = SC.Object.create({
     @property {Boolean}
     @default NO
   */
-  windowSizeDeterminesOrientation: SC.browser.os === SC.OS.ios || !('onorientationchange' in window)
+  windowSizeDeterminesOrientation: SC.browser.os === SC.OS.ios || !('onorientationchange' in window),
+
+  /**
+   * If PointerEvents are supported.
+   * @property {Boolean}
+   */
+  supportsPointerEvents: !!window.PointerEvent
 
 });
 

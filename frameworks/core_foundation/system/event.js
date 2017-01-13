@@ -41,6 +41,9 @@ SC.Event = function(originalEvent) {
     }
   }
 
+  // Information about the current touch, populate if this is a touch event
+  this.activeTouch = null;
+
   // Fix timeStamp
   this.timeStamp = this.timeStamp || Date.now();
 
@@ -811,38 +814,6 @@ SC.Event.prototype = {
   hasCustomEventHandling: NO,
 
   /**
-    Returns the touches owned by the supplied view.
-
-    @param {SC.View}
-    @returns {Array} touches an array of SC.Touch objects
-  */
-  touchesForView: function(view) {
-    if (this.touchContext) return this.touchContext.touchesForView(view);
-  },
-
-  /**
-    Same as touchesForView, but sounds better for responders.
-
-    @param {SC.RootResponder}
-    @returns {Array} touches an array of SC.Touch objects
-  */
-  touchesForResponder: function(responder) {
-    if (this.touchContext) return this.touchContext.touchesForView(responder);
-  },
-
-  /**
-    Returns average data--x, y, and d (distance)--for the touches owned by the
-    supplied view.
-
-    @param {SC.View}
-    @returns {Array} touches an array of SC.Touch objects
-  */
-  averagedTouchesForView: function(view) {
-    if (this.touchContext) return this.touchContext.averagedTouchesForView(view);
-    return null;
-  },
-
-  /**
     Indicates that you want to allow the normal default behavior.  Sets
     the hasCustomEventHandling property to YES but does not cancel the event.
 
@@ -970,9 +941,23 @@ SC.Event.prototype = {
 
     if (ret) ret = modifiers + ret ;
     return [ret, key] ;
-  }
+  },
 
-} ;
+  /**
+   * Copies members from the passed touch to this event so this event is similar to a mouse event. The properties copied
+   * are the standard mouse X & Y coordinate properties and the target of the touch
+   * @param {Touch} touch - The touch object to copy properties from
+   */
+  copyTouchProperties: function (touch) {
+    this.clientX = touch.clientX;
+    this.clientY = touch.clientY;
+    this.pageX = touch.pageX;
+    this.pageY = touch.pageY;
+    this.screenX = touch.screenX;
+    this.screenY = touch.screenY;
+    this.target = touch.target;
+  }
+};
 
 // Also provide a Prototype-like API so that people can use either one.
 

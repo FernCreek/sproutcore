@@ -48,8 +48,7 @@ SC.CAPTURE_BACKSPACE_KEY = NO ;
      explicit target, or allow the action to traverse the hierarchy until a
      view is found that handles it.
 */
-SC.RootResponder = SC.Object.extend(
-  /** @scope SC.RootResponder.prototype */{
+SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
 
   /**
     Contains a list of all panes currently visible on screen.  Every time a
@@ -629,8 +628,14 @@ SC.RootResponder = SC.Object.extend(
     @returns {void}
   */
   setup: function() {
-    // handle touch events
-    this.listenFor(['touchstart', 'touchmove', 'touchend', 'touchcancel'], document);
+
+    // Handle pointer events if they're supported
+    if (SC.platform.supportsPointerEvents) {
+      this.listenFor(['pointerdown', 'pointermove', 'pointerup', 'pointercancel'], document);
+    } else {
+      // Only handle touch events if the browser doesn't support pointer events, Chrome supports both
+      this.listenFor(['touchstart', 'touchmove', 'touchend', 'touchcancel'], document);
+    }
 
     // handle basic events
     this.listenFor(['keydown', 'keyup', 'beforedeactivate', 'mousedown', 'mouseup', 'click', 'dblclick', 'mousemove', 'selectstart', 'contextmenu'], document)
@@ -709,729 +714,292 @@ SC.RootResponder = SC.Object.extend(
   // ...........................................................................
   // TOUCH SUPPORT
   //
-  /*
-    There are three events: touchStart, touchEnd and touchesDragged.
-
-    The touchStart and touchEnd events are called individually for each touch.
-    The touchesDragged events are sent to whichever view owns the touch event.
-  */
 
   /**
-    @private
-    A map from views to internal touch entries.
+   * Called when a touch is started
+   * @param {SC.Event} event - The normalized event
+   * @returns {Boolean} If the default browser behavior should be allowed, this function will always return false to
+   * prevent browser compatibility events from being fired
+   */
+  touchstart: function (event) {
+    var view;
+    var firstResponder;
+    var touch;
 
-    Note: the touch entries themselves also reference the views.
-  */
-  _touchedViews: {},
-
-  /**
-    @private
-    A map from internal touch ids to the touch entries themselves.
-
-    The touch entry ids currently come from the touch event's identifier.
-  */
-  _touches: {},
-
-  /**
-    Returns the touches that are registered to the specified view or responder; undefined if none.
-
-    When views receive a touch event, they have the option to subscribe to it.
-    They are then mapped to touch events and vice-versa. This returns touches mapped to the view.
-  */
-  touchesForView: function(view) {
-    if (this._touchedViews[SC.guidFor(view)]) {
-      return this._touchedViews[SC.guidFor(view)].touches;
-    }
-  },
-
-  /**
-    Computes a hash with x, y, and d (distance) properties, containing the average position
-    of all touches, and the average distance of all touches from that average.
-
-    This is useful for implementing scaling.
-  */
-  averagedTouchesForView: function(view, added) {
-    var t = this.touchesForView(view),
-
-    // cache per view to avoid gc
-    averaged = view._scrr_averagedTouches || (view._scrr_averagedTouches = {});
-
-    if ((!t || t.length === 0) && !added) {
-      averaged.x = 0;
-      averaged.y = 0;
-      averaged.d = 0;
-      averaged.touchCount = 0;
-
-    } else {
-      // make array of touches using cached array
-      var touches = this._averagedTouches_touches || (this._averagedTouches_touches = []);
-      touches.length = 0;
-
-      // copy touches into array
-      if (t) {
-        var i, len = t.length;
-        for(i = 0; i < len; i++) {
-          touches.push(t[i]);
-        }
+    if (this._activeTouch) {
+      // There is already an active touch which means this is part of a multi-touch, which we don't support right now,
+      // or we never received a touch end, such as if the target element was removed when handling the touchstart.
+      // Check if the active touch target is still in the DOM, if not then clear the touch.
+      if (!SC.get(this._activeTouch, 'touchStartEvent.target') ||
+        !document.body.contains(this._activeTouch.touchStartEvent.target)) {
+        // Since we don't know how long ago this touchstart was it seems wrong to try to fake out a touchend, if a view
+        // is doing something destructive as part of touchstart or mousedown then not getting touchend or mouseup is on
+        // their own heads.
+        this._activeTouch = null;
       }
-
-      // add added if needed
-      if (added) touches.push(added);
-
-      // prepare variables for looping
-      var idx, touch,
-          ax = 0, ay = 0, dx, dy, ad = 0;
-      len = touches.length;
-
-      // first, add
-      for (idx = 0; idx < len; idx++) {
-        touch = touches[idx];
-        ax += touch.pageX; ay += touch.pageY;
-      }
-
-      // now, average
-      ax /= len;
-      ay /= len;
-
-      // distance
-      for (idx = 0; idx < len; idx++) {
-        touch = touches[idx];
-
-        // get distance from average
-        dx = Math.abs(touch.pageX - ax);
-        dy = Math.abs(touch.pageY - ay);
-
-        // Pythagoras was clever...
-        ad += Math.pow(dx * dx + dy * dy, 0.5);
-      }
-
-      // average
-      ad /= len;
-
-      averaged.x = ax;
-      averaged.y = ay;
-      averaged.d = ad;
-      averaged.touchCount = len;
     }
 
-    return averaged;
-  },
+    if (!this._activeTouch) {
+      view = this.targetViewForEvent(event);
 
-  assignTouch: function(touch, view) {
-    // sanity-check
-    if (touch.hasEnded) throw "Attempt to assign a touch that is already finished.";
+      if (view) {
+        firstResponder = view.getPath('pane.firstResponder');
+      }
 
-    // unassign from old view if necessary
-    if (touch.view === view) return;
-    if (touch.view) {
-      this.unassignTouch(touch);
-    }
+      // Blur the focused control if it should blur on any click
+      if (firstResponder && firstResponder.get('blurOnMouseDown') && firstResponder !== view) {
+        firstResponder.resignFirstResponder(event);
+      }
 
-    // create view entry if needed
-    if (!this._touchedViews[SC.guidFor(view)]) {
-      this._touchedViews[SC.guidFor(view)] = {
-        view: view,
-        touches: SC.CoreSet.create([]),
-        touchCount: 0
+      // get the first touch, this should never be null since it comes from the browser
+      touch = event.changedTouches[0];
+
+      // copy the properties from active touch, to our event so all of events have the standard x & y members
+      event.copyTouchProperties(touch);
+      this._activeTouch = {
+        touchID: touch.identifier,
+        touchStartEvent: event
       };
-      view.set("hasTouch", YES);
+
+      event.activeTouch = this._activeTouch;
+
+      view = this.sendEvent('touchStart', event, view);
+
+      this._activeTouch.touchStartView = view;
+
+      if (!view) {
+        // no one handled the touch, try sending it as a mouse event
+        this.mousedown(event);
+      }
+
+      // TODO_JA - Also implement _mouseCanDrag behavior?
     }
+    // else this start was part of a multi-touch which isn't supported
 
-    // add touch
-    touch.view = view;
-    this._touchedViews[SC.guidFor(view)].touches.add(touch);
-    this._touchedViews[SC.guidFor(view)].touchCount++;
-  },
-
-  unassignTouch: function(touch) {
-    // find view entry
-    var view, viewEntry;
-
-    // get view
-    if (!touch.view) return; // touch.view should===touch.touchResponder eventually :)
-    view = touch.view;
-
-    // get view entry
-    viewEntry = this._touchedViews[SC.guidFor(view)];
-    viewEntry.touches.remove(touch);
-    viewEntry.touchCount--;
-
-    // remove view entry if needed
-    if (viewEntry.touchCount < 1) {
-      view.set("hasTouch", NO);
-      viewEntry.view = null;
-      delete this._touchedViews[SC.guidFor(view)];
-    }
-
-    // clear view
-    touch.view = undefined;
-  },
-
-  _flushQueuedTouchResponder: function(){
-    if (this._queuedTouchResponder) {
-      var queued = this._queuedTouchResponder;
-      this._queuedTouchResponder = null;
-      this.makeTouchResponder.apply(this, queued);
-    }
+    // Always cancel the event to prevent the browser from generating compatibility mouse events, we don't need them
+    return false;
   },
 
   /**
-    The touch responder for any given touch is the view which will receive touch events
-    for that touch. Quite simple.
+   * Called when a touch is moved, the target of each touch that was moved will be the same element as the corresponding
+   * touch start.
+   * @param {SC.Event} event - The normalized event
+   * @returns {Boolean} If the default browser behavior should be allowed, this function will always return false to
+   * prevent browser compatibility events from being fired
+   */
+  touchmove: function (event) {
+    var view;
+    var touch, i;
+    var handleTouchMove = false;
 
-    makeTouchResponder takes a potential responder as an argument, and, by calling touchStart on each
-    nextResponder, finds the actual responder. As a side-effect of how it does this, touchStart is called
-    on the new responder before touchCancelled is called on the old one (touchStart has to accept the touch
-    before it can be considered cancelled).
+    if (this._activeTouch) {
+      // does this touch move correspond to our active touch?
+      for (i = 0; i < event.changedTouches.length; ++i && !handleTouchMove) {
+        touch = event.changedTouches[i];
 
-    You usually don't have to think about this at all. However, if you don't want your view to,
-    for instance, prevent scrolling in a ScrollView, you need to make sure to transfer control
-    back to the previous responder:
-
-        if (Math.abs(touch.pageY - touch.startY) > this.MAX_SWIPE)
-          touch.restoreLastTouchResponder();
-
-    You don't call makeTouchResponder on RootResponder directly. Instead, it gets called for you
-    when you return YES to captureTouch or touchStart.
-
-    You do, however, use a form of makeTouchResponder to return to a previous touch responder. Consider
-    a button view inside a ScrollView: if the touch moves too much, the button should give control back
-    to the scroll view.
-
-        if (Math.abs(touch.pageX - touch.startX) > 4) {
-          if (touch.nextTouchResponder)
-            touch.makeTouchResponder(touch.nextTouchResponder);
-        }
-
-    This will give control back to the containing view. Maybe you only want to do it if it is a ScrollView?
-
-        if (
-          Math.abs(touch.pageX - touch.startX) > 4 &&
-          touch.nextTouchResponder &&
-          touch.nextTouchResponder.isScrollable
-        )
-          touch.makeTouchResponder(touch.nextTouchResponder);
-
-    Possible gotcha: while you can do touch.nextTouchResponder, the responders are not chained in a linked list like
-    normal responders, because each touch has its own responder stack. To navigate through the stack (or, though
-    it is not recommended, change it), use touch.touchResponders (the raw stack array).
-
-    makeTouchResponder is called with an event object. However, it usually triggers custom touchStart/touchCancelled
-    events on the views. The event object is passed so that functions such as stopPropagation may be called.
-  */
-  makeTouchResponder: function(touch, responder, shouldStack, upViewChain) {
-
-    // In certain cases (SC.Gesture being one), we have to call makeTouchResponder
-    // from inside makeTouchResponder so we queue it up here.
-    if (this._isMakingTouchResponder) {
-      this._queuedTouchResponder = [touch, responder, shouldStack, upViewChain];
-      return;
-    }
-    this._isMakingTouchResponder = YES;
-
-
-    var stack = touch.touchResponders, touchesForView;
-
-    // find the actual responder (if any, I suppose)
-    // note that the pane's sendEvent function is slightly clever:
-    // if the target is already touch responder, it will just return it without calling touchStart
-    // we must do the same.
-    if (touch.touchResponder === responder) {
-      this._isMakingTouchResponder = NO;
-      this._flushQueuedTouchResponder();
-      return;
-    }
-
-    // send touchStart
-    // get the target pane
-    var pane;
-    if (responder) pane = responder.get('pane') ;
-    else pane = this.get('keyPane') || this.get('mainPane') ;
-
-    // if the responder is not already in the stack...
-
-    if (stack.indexOf(responder) < 0) {
-      // if we need to go up the view chain, do so
-      if (upViewChain) {
-        // if we found a valid pane, send the event to it
-        try {
-          responder = (pane) ? pane.sendEvent("touchStart", touch, responder) : null ;
-        } catch (e) {
-          SC.Logger.error("Error in touchStart: " + e);
-          responder = null;
-        }
-      } else {
-
-        if (responder && ((responder.get ? responder.get("acceptsMultitouch") : responder.acceptsMultitouch) || !responder.hasTouch)) {
-          if (!responder.touchStart(touch)) responder = null;
-        } else {
-          // do nothing; the responder is the responder, and may stay the responder, and all will be fine
-        }
-      }
-    }
-
-    // if the item is in the stack, we will go to it (whether shouldStack is true or not)
-    // as it is already stacked
-    if (!shouldStack || (stack.indexOf(responder) > -1 && stack[stack.length - 1] !== responder)) {
-      // first, we should unassign the touch. Note that we only do this IF WE ARE removing
-      // the current touch responder. Otherwise we cause all sorts of headaches; why? Because,
-      // if we are not (suppose, for instance, that it is stacked), then the touch does not
-      // get passed back to the touch responder-- even while it continues to get events because
-      // the touchResponder is still set!
-      this.unassignTouch(touch);
-
-      // pop all other items
-      var idx = stack.length - 1, last = stack[idx];
-      while (last && last !== responder) {
-        // unassign the touch
-        touchesForView = this.touchesForView(last); // won't even exist if there are no touches
-
-        // send touchCancelled (or, don't, if the view doesn't accept multitouch and it is not the last touch)
-        if ((last.get ? last.get("acceptsMultitouch") : last.acceptsMultitouch) || !touchesForView) {
-          if (last.touchCancelled) last.touchCancelled(touch);
-        }
-
-        // go to next (if < 0, it will be undefined, so lovely)
-        idx--;
-        last = stack[idx];
-
-        // update responders (for consistency)
-        stack.pop();
-
-        touch.touchResponder = stack[idx];
-        touch.nextTouchResponder = stack[idx - 1];
+        handleTouchMove = touch.identifier === this._activeTouch.touchID;
       }
 
-    }
+      if (handleTouchMove) {
+        view = this.targetViewForEvent(event);
 
-    // now that we've popped off, we can push on
-    if (responder) {
-      this.assignTouch(touch, responder);
+        event.copyTouchProperties(touch);
+        event.activeTouch = this._activeTouch;
+        view = this.sendEvent('touchesDragged', event, view);
 
-      // keep in mind, it could be one we popped off _to_ above...
-      if (responder !== touch.touchResponder) {
-        stack.push(responder);
-
-        // update responder helpers
-        touch.touchResponder = responder;
-        touch.nextTouchResponder = stack[stack.length - 2];
+        if (!view) {
+          // no one handled the touch, try sending it as a mouse event
+          this.mousemove(event);
+        }
       }
+      // else this was a move for an unsupported multi-touch, so do nothing
     }
+    // else there was no touchstart, just ignore it
 
-
-    this._isMakingTouchResponder = NO;
-    this._flushQueuedTouchResponder();
-
+    // Always cancel the event to prevent the browser from generating compatibility mouse events, we don't need them
+    return false;
   },
 
   /**
-    captureTouch is used to find the view to handle a touch. It starts at the starting point and works down
-    to the touch's target, looking for a view which captures the touch. If no view is found, it uses the target
-    view.
+   * Called when a touch ends normally, the target of each touch that was stopped will be the same element as the
+   * corresponding touch start.
+   * @param {SC.Event} event - The normalized event
+   * @returns {Boolean} If the default browser behavior should be allowed, this function will always return false to
+   * prevent browser compatibility events from being fired
+   */
+  touchend: function (event) {
+    var view;
+    var touch, i;
+    var handleTouchEnd = false;
 
-    Then, it triggers a touchStart event starting at whatever the found view was; this propagates up the view chain
-    until a view responds YES. This view becomes the touch's owner.
+    if (this._activeTouch) {
+      // Does this touchend correspond to our active touch?
+      for (i = 0; i < event.changedTouches.length; ++i && !handleTouchEnd) {
+        touch = event.changedTouches[i];
 
-    You usually do not call captureTouch, and if you do call it, you'd call it on the touch itself:
-    touch.captureTouch(startingPoint, shouldStack)
-
-    If shouldStack is YES, the previous responder will be kept so that it may be returned to later.
-  */
-  captureTouch: function(touch, startingPoint, shouldStack) {
-    if (!startingPoint) startingPoint = this;
-
-    var target = touch.targetView, view = target,
-        chain = [], idx, len;
-
-    if (SC.LOG_TOUCH_EVENTS) {
-      SC.Logger.info('  -- Received one touch on %@'.fmt(target.toString()));
-    }
-    // work up the chain until we get the root
-    while (view && (view !== startingPoint)) {
-      chain.unshift(view);
-      view = view.get('nextResponder');
-    }
-
-    // work down the chain
-    for (len = chain.length, idx = 0; idx < len; idx++) {
-      view = chain[idx];
-      if (SC.LOG_TOUCH_EVENTS) SC.Logger.info('  -- Checking %@ for captureTouch response…'.fmt(view.toString()));
-
-      // see if it captured the touch
-      if (view.tryToPerform('captureTouch', touch)) {
-        if (SC.LOG_TOUCH_EVENTS) SC.Logger.info('   -- Making %@ touch responder because it returns YES to captureTouch'.fmt(view.toString()));
-
-        // if so, make it the touch's responder
-        this.makeTouchResponder(touch, view, shouldStack, YES); // triggers touchStart/Cancel/etc. event.
-        return; // and that's all we need
+        handleTouchEnd = touch.identifier === this._activeTouch.touchID;
       }
-    }
+      view = this._activeTouch.touchStartView;
 
-    if (SC.LOG_TOUCH_EVENTS) SC.Logger.info("   -- Didn't find a view that returned YES to captureTouch, so we're calling touchStart");
-    // if we did not capture the touch (obviously we didn't)
-    // we need to figure out what view _will_
-    // Thankfully, makeTouchResponder does exactly that: starts at the view it is supplied and keeps calling startTouch
-    this.makeTouchResponder(touch, target, shouldStack, YES);
+      if (handleTouchEnd) {
+        event.copyTouchProperties(touch);
+        event.activeTouch = this._activeTouch;
+
+        if (!view || !this.sendEvent('touchEnd', event, view)) {
+          // no one handled the touch, try sending it as a mouse event
+          this.mouseup(event);
+        }
+
+        // clear touch data now that touch is over
+        this._activeTouch = null;
+      }
+      // else this was an end for an unsupported multi-touch, so do nothing
+
+    }
+    // else there was no corresponding touchstart, just ignore it
+
+    // Always cancel the event to prevent the browser from generating compatibility mouse events, we don't need them
+    return false;
   },
 
-  /** @private
-    Artificially calls endTouch for any touch which is no longer present. This is necessary because
-    _sometimes_, WebKit ends up not sending endtouch.
-  */
-  endMissingTouches: function(presentTouches) {
-    var idx, len = presentTouches.length, map = {}, end = [];
-
-    // make a map of what touches _are_ present
-    for (idx = 0; idx < len; idx++) {
-      map[presentTouches[idx].identifier] = YES;
-    }
-
-    // check if any of the touches we have recorded are NOT present
-    for (idx in this._touches) {
-      var id = this._touches[idx].identifier;
-      if (!map[id]) end.push(this._touches[idx]);
-    }
-
-    // end said touches
-    for (idx = 0, len = end.length; idx < len; idx++) {
-      this.endTouch(end[idx]);
-      this.finishTouch(end[idx]);
-    }
+  touchcancel: function (event) {
+    console.log('Touch cancel sent');
+    // TODO_JA - treat this the same as an end?
   },
 
-  _touchCount: 0,
-  /** @private
-    Ends a specific touch (for a bit, at least). This does not "finish" a touch; it merely calls
-    touchEnd, touchCancelled, etc. A re-dispatch (through recapture or makeTouchResponder) will terminate
-    the process; it would have to be restarted separately, through touch.end().
-  */
-  endTouch: function(touchEntry, action, evt) {
-    if (!action) { action = "touchEnd"; }
+  // ...........................................................................
+  // POINTER EVENT SUPPORT
+  //
 
-    var responderIdx, responders, responder, originalResponder;
+  /**
+   * Called when a pointer becomes active
+   * @param {SC.Event} event - The normalized event
+   * @returns {Boolean} If the browser should generate a compatibility mouse event.
+   */
+  pointerdown: function (event) {
+    var allowCompatibilityEvent = true;
+    var pointerEvent = event.originalEvent;
+    var view;
+    var firstResponder;
 
-    // unassign
-    this.unassignTouch(touchEntry);
+    // For browsers that support pointer events we get them for both mouse & touch pointers, in order to not affect
+    // existing functionality we want the browser to change the mouse pointer events into normal mouse events and only
+    // try to handle touch events here
+    if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
+      allowCompatibilityEvent = false;
 
-    // call end for all items in chain
-    if (touchEntry.touchResponder) {
-      originalResponder = touchEntry.touchResponder;
+      view = this.targetViewForEvent(event);
 
-      responders = touchEntry.touchResponders;
-      responderIdx = responders.length - 1;
-      responder = responders[responderIdx];
-      while (responder) {
-        if (responder[action]) { responder[action](touchEntry, evt); }
+      if (view) {
+        firstResponder = view.getPath('pane.firstResponder');
+      }
 
-        // check to see if the responder changed, and stop immediately if so.
-        if (touchEntry.touchResponder !== originalResponder) { break; }
+      // Blur the focused control if it should blur on any click
+      if (firstResponder && firstResponder.get('blurOnMouseDown') && firstResponder !== view) {
+        firstResponder.resignFirstResponder(event);
+      }
 
-        // next
-        responderIdx--;
-        responder = responders[responderIdx];
-        action = "touchCancelled"; // any further ones receive cancelled
+      // We don't really need this information for pointer events but we have to track it so the events we send will be
+      // the same as a touch event
+      this._activePointer = {
+        touchID: pointerEvent.pointerId,
+        touchStartEvent: event
+      };
+      event.activeTouch = this._activePointer;
+
+      view = this.sendEvent('touchStart', event, view);
+
+      this._activePointer.touchStartView = view;
+
+      if (!view) {
+        // no one handled the touch, try sending it as a mouse event
+        this.mousedown(event);
       }
     }
+    // else this was an actual mouse event or some pointer type we don't support in which case we want the compatibility
+    // event or this was a non-primary touch event which we ignore, since we don't support multi-touch
+
+    // The isPrimary check is enough for touch since a touch pointer can only become the primary pointer if there are
+    // no other touch pointers active when it becomes active and non-primary touch events shouldn't generate
+    // compatibility mouse events
+
+    // TODO_JA - verify non-primary touch doesn't generate compatibility event
+
+    return allowCompatibilityEvent;
   },
 
   /**
-    @private
-    "Finishes" a touch. That is, it eradicates it from our touch entries and removes all responder, etc. properties.
-  */
-  finishTouch: function(touch) {
-    var elem;
+   * Called when a pointer is moved, for mouse pointers a pointer can move and not be active.
+   * @param {SC.Event} event - The normalized event
+   * @returns {Boolean} If the browser should generate a compatibility mouse event.
+   */
+  pointermove: function (event) {
+    var allowCompatibilityEvent = true;
+    var pointerEvent = event.originalEvent;
+    var view;
 
-    // ensure the touch is indeed unassigned.
-    this.unassignTouch(touch);
+    // For browsers that support pointer events we get them for both mouse & touch pointers, in order to not affect
+    // existing functionality we want the browser to change the mouse pointer events into normal mouse events and only
+    // try to handle touch events here
+    if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
+      allowCompatibilityEvent = false;
 
-    // If we rescued this touch's initial element, we should remove it
-    // from the DOM and garbage collect now. See setup() for an
-    // explanation of this bug/workaround.
-    if (elem = touch._rescuedElement) {
-      if (elem.swapNode && elem.swapNode.parentNode) {
-        elem.swapNode.parentNode.replaceChild(elem, elem.swapNode);
-      } else if (elem.parentNode === SC.touchHoldingPen) {
-        SC.touchHoldingPen.removeChild(elem);
+      view = this.targetViewForEvent(event);
+
+      // Retain compatibility with touch events
+      event.activeTouch = this._activePointer;
+
+      view = this.sendEvent('touchesDragged', event, view);
+
+      if (!view) {
+        // no one handled the touch, try sending it as a mouse event
+        this.mousemove(event);
       }
-      delete touch._rescuedElement;
-      elem.swapNode = null;
-      elem = null;
     }
 
-
-    // clear responders (just to be thorough)
-    touch.touchResponders = null;
-    touch.touchResponder = null;
-    touch.nextTouchResponder = null;
-    touch.hasEnded = YES;
-
-    // and remove from our set
-    if (this._touches[touch.identifier]) delete this._touches[touch.identifier];
-  },
-
-  /** @private
-    Called when the user touches their finger to the screen. This method
-    dispatches the touchstart event to the appropriate view.
-
-    We may receive a touchstart event for each touch, or we may receive a
-    single touchstart event with multiple touches, so we may have to dispatch
-    events to multiple views.
-
-    @param {Event} evt the event
-    @returns {Boolean}
-  */
-  touchstart: function(evt) {
-    // Starting iOS5 touch events are handled by textfields.
-    // As a workaround just let the browser to use the default behavior.
-    if(this.ignoreTouchHandle(evt)) return YES;
-
-
-    var hidingTouchIntercept = NO;
-
-    SC.run(function() {
-      // sometimes WebKit is a bit... iffy:
-      this.endMissingTouches(evt.touches);
-
-      // as you were...
-      // loop through changed touches, calling touchStart, etc.
-      var idx, touches = evt.changedTouches, len = touches.length,
-          target, view, touch, touchEntry;
-
-      // prepare event for touch mapping.
-      evt.touchContext = this;
-
-      // Loop through each touch we received in this event
-      for (idx = 0; idx < len; idx++) {
-        touch = touches[idx];
-
-        // Create an SC.Touch instance for every touch.
-        touchEntry = SC.Touch.create(touch, this);
-
-        // skip the touch if there was no target
-        if (!touchEntry.targetView) continue;
-
-        // account for hidden touch intercept (passing through touches, etc.)
-        if (touchEntry.hidesTouchIntercept) hidingTouchIntercept = YES;
-
-        // set timestamp
-        touchEntry.timeStamp = evt.timeStamp;
-
-        // Store the SC.Touch object. We use the identifier property (provided
-        // by the browser) to disambiguate between touches. These will be used
-        // later to determine if the touches have changed.
-        this._touches[touch.identifier] = touchEntry;
-
-        // set the event (so default action, etc. can be stopped)
-        touchEntry.event = evt; // will be unset momentarily
-
-        // send out event thing: creates a chain, goes up it, then down it,
-        // with startTouch and cancelTouch. in this case, only startTouch, as
-        // there are no existing touch responders. We send the touchEntry
-        // because it is cached (we add the helpers only once)
-        this.captureTouch(touchEntry, this);
-
-        // Unset the reference to the original event so we can garbage collect.
-        touchEntry.event = null;
-      }
-    }, this);
-
-
-    // hack for text fields
-    if (hidingTouchIntercept) {
-      return YES;
-    }
-
-    return evt.hasCustomEventHandling;
+    return allowCompatibilityEvent;
   },
 
   /**
-    @private
-    used to keep track of when a specific type of touch event was last handled, to see if it needs to be re-handled
-  */
-  touchmove: function(evt) {
-    // Starting iOS5 touch events are handled by textfields.
-    // As a workaround just let the browser to use the default behavior.
-    if(this.ignoreTouchHandle(evt)) return YES;
+   * Called when a pointer is no longer active.
+   * @param {SC.Event} event - The normalized event
+   * @returns {Boolean} If the browser should generate a compatibility mouse event.
+   */
+  pointerup: function (event) {
+    var allowCompatibilityEvent = true;
+    var pointerEvent = event.originalEvent;
+    var view;
 
-    SC.run(function() {
-      // pretty much all we gotta do is update touches, and figure out which views need updating.
-      var touches = evt.changedTouches, touch, touchEntry,
-          idx, len = touches.length, view, changedTouches, viewTouches, firstTouch,
-          changedViews = {}, loc, guid, hidingTouchIntercept = NO;
+    if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
+      allowCompatibilityEvent = false;
 
-      if (this._drag) {
-        touch = SC.Touch.create(evt.changedTouches[0], this);
-        this._drag.tryToPerform('mouseDragged', touch);
+      view = this._activePointer.touchStartView;
+
+      // Retain compatibility with touch events
+      event.activeTouch = this._activePointer;
+
+      if (!view || !this.sendEvent('touchEnd', event, view)) {
+        // no one handled the touch, try sending it as a mouse event
+        this.mouseup(event);
       }
 
-      // figure out what views had touches changed, and update our internal touch objects
-      for (idx = 0; idx < len; idx++) {
-        touch = touches[idx];
+      // TODO_JA - prevent click events like mouse events do? Even needed?
 
-        // get our touch
-        touchEntry = this._touches[touch.identifier];
-
-        // we may have no touch entry; this can happen if somehow the touch came to a non-SC area.
-        if (!touchEntry) {
-          continue;
-        }
-
-        if (touchEntry.hidesTouchIntercept) hidingTouchIntercept = YES;
-
-        // update touch
-        touchEntry.pageX = touch.pageX;
-        touchEntry.pageY = touch.pageY;
-        touchEntry.clientX = touch.clientX;
-        touchEntry.clientY = touch.clientY;
-        touchEntry.screenX = touch.screenX;
-        touchEntry.screenY = touch.screenY;
-        touchEntry.timeStamp = evt.timeStamp;
-        touchEntry.event = evt;
-
-        // if the touch entry has a view
-        if (touchEntry.touchResponder) {
-          view = touchEntry.touchResponder;
-
-          guid = SC.guidFor(view);
-          // create a view entry
-          if (!changedViews[guid]) changedViews[guid] = { "view": view, "touches": [] };
-
-          // add touch
-          changedViews[guid].touches.push(touchEntry);
-        }
-      }
-
-      // HACK: DISABLE OTHER TOUCH DRAGS WHILE MESSING WITH TEXT FIELDS
-      if (hidingTouchIntercept) {
-        evt.allowDefault();
-        return YES;
-      }
-
-      // loop through changed views and send events
-      for (idx in changedViews) {
-        // get info
-        view = changedViews[idx].view;
-        changedTouches = changedViews[idx].touches;
-
-        // prepare event; note that views often won't use this method anyway (they'll call touchesForView instead)
-        evt.viewChangedTouches = changedTouches;
-
-        // the first VIEW touch should be the touch info sent
-        viewTouches = this.touchesForView(view);
-        firstTouch = viewTouches.firstObject();
-        evt.pageX = firstTouch.pageX;
-        evt.pageY = firstTouch.pageY;
-        evt.clientX = firstTouch.clientX;
-        evt.clientY = firstTouch.clientY;
-        evt.screenX = firstTouch.screenX;
-        evt.screenY = firstTouch.screenY;
-        evt.touchContext = this; // so it can call touchesForView
-
-        // and go
-        view.tryToPerform("touchesDragged", evt, viewTouches);
-      }
-
-      // clear references to event
-      touches = evt.changedTouches;
-      len = touches.length;
-      for (idx = 0; idx < len; idx++) {
-        touch = touches[idx];
-        touchEntry = this._touches[touch.identifier];
-        if (touchEntry) touchEntry.event = null;
-      }
-    }, this);
-
-    return evt.hasCustomEventHandling;
-  },
-
-  touchend: function(evt) {
-    var hidesTouchIntercept = NO;
-
-    // Starting iOS5 touch events are handled by textfields.
-    // As a workaround just let the browser to use the default behavior.
-    if(this.ignoreTouchHandle(evt)) return YES;
-
-    SC.run(function() {
-      var touches = evt.changedTouches, touch, touchEntry,
-          idx, len = touches.length,
-          view, elem,
-          action = evt.isCancel ? "touchCancelled" : "touchEnd", a,
-          responderIdx, responders, responder;
-
-      for (idx = 0; idx < len; idx++) {
-        //get touch+entry
-        touch = touches[idx];
-        touch.type = 'touchend';
-        touchEntry = this._touches[touch.identifier];
-
-        // check if there is an entry
-        if (!touchEntry) continue;
-
-        // continue work
-        touchEntry.timeStamp = evt.timeStamp;
-        touchEntry.pageX = touch.pageX;
-        touchEntry.pageY = touch.pageY;
-        touchEntry.clientX = touch.clientX;
-        touchEntry.clientY = touch.clientY;
-        touchEntry.screenX = touch.screenX;
-        touchEntry.screenY = touch.screenY;
-        touchEntry.type = 'touchend';
-        touchEntry.event = evt;
-
-        if (SC.LOG_TOUCH_EVENTS) SC.Logger.info('-- Received touch end');
-        if (touchEntry.hidesTouchIntercept) {
-          touchEntry.unhideTouchIntercept();
-          hidesTouchIntercept = YES;
-        }
-
-        if (this._drag) {
-          this._drag.tryToPerform('mouseUp', touch) ;
-          this._drag = null ;
-        }
-
-        // unassign
-        this.endTouch(touchEntry, action, evt);
-        this.finishTouch(touchEntry);
-      }
-    }, this);
-
-
-    // for text fields
-    if (hidesTouchIntercept) {
-      return YES;
+      // clean up
+      this._activePointer = null;
     }
 
-    return evt.hasCustomEventHandling;
+    return allowCompatibilityEvent;
   },
 
-  /** @private
-    Handle touch cancel event.  Works just like cancelling a touch for any other reason.
-    touchend handles it as a special case (sending cancel instead of end if needed).
-  */
-  touchcancel: function(evt) {
-    evt.isCancel = YES;
-    this.touchend(evt);
-  },
-
-  /** @private
-     Ignore Touch events on textfields and links. starting iOS 5 textfields
-     get touch events. Textfields just need to get the default focus action.
-  */
-  ignoreTouchHandle: function(evt) {
-    if(SC.browser.isMobileSafari){
-      var tag = evt.target.tagName;
-      if(tag==="INPUT" || tag==="TEXTAREA" || tag==="A" || tag==="SELECT"){
-        evt.allowDefault();
-        return YES;
-      }
-    }
-    return NO;
+  pointercancel: function (event) {
+    console.log('Pointer cancel sent');
+    // TODO_JA - treat this the same as an end?
   },
 
   // ..........................................................
   // KEYBOARD HANDLING
   //
-
 
   /**
     Invoked on a keyDown event that is not handled by any actual value.  This
@@ -2005,128 +1573,6 @@ SC.RootResponder = SC.Object.extend(
     return view ? evt.hasCustomEventHandling : YES;
   }
 
-});
-
-/**
-  @class SC.Touch
-  Represents a touch.
-
-  Views receive touchStart and touchEnd.
-*/
-SC.Touch = function(touch, touchContext) {
-  // get the raw target view (we'll refine later)
-  this.touchContext = touchContext;
-  this.identifier = touch.identifier; // for now, our internal id is WebKit's id.
-
-  var target = touch.target, targetView;
-  targetView = touch.target ? SC.$(touch.target).view()[0] : null;
-  this.targetView = targetView;
-  this.target = target;
-  this.hasEnded = NO;
-  this.type = touch.type;
-  this.clickCount = 1;
-
-  this.view = undefined;
-  this.touchResponder = this.nextTouchResponder = undefined;
-  this.touchResponders = [];
-
-  this.startX = this.pageX = touch.pageX;
-  this.startY = this.pageY = touch.pageY;
-  this.clientX = touch.clientX;
-  this.clientY = touch.clientY;
-  this.screenX = touch.screenX;
-  this.screenY = touch.screenY;
-};
-
-SC.Touch.prototype = {
-  /**@scope SC.Touch.prototype*/
-
-  unhideTouchIntercept: function() {
-    var intercept = this.hidesTouchIntercept;
-    if (intercept) {
-      setTimeout(function() { intercept.style.webkitTransform = "translate3d(0px,0px,0px)"; }, 500);
-    }
-  },
-
-  /**
-    Indicates that you want to allow the normal default behavior.  Sets
-    the hasCustomEventHandling property to YES but does not cancel the event.
-  */
-  allowDefault: function() {
-    if (this.event) this.event.hasCustomEventHandling = YES ;
-  },
-
-  /**
-    If the touch is associated with an event, prevents default action on the event.
-  */
-  preventDefault: function() {
-    if (this.event) this.event.preventDefault();
-  },
-
-  stopPropagation: function() {
-    if (this.event) this.event.stopPropagation();
-  },
-
-  stop: function() {
-    if (this.event) this.event.stop();
-  },
-
-  /**
-    Removes from and calls touchEnd on the touch responder.
-  */
-  end: function() {
-    this.touchContext.endTouch(this);
-  },
-
-  /**
-    Changes the touch responder for the touch. If shouldStack === YES,
-    the current responder will be saved so that the next responder may
-    return to it.
-  */
-  makeTouchResponder: function(responder, shouldStack, upViewChain) {
-    this.touchContext.makeTouchResponder(this, responder, shouldStack, upViewChain);
-  },
-
-
-  /**
-    Captures, or recaptures, the touch. This works from the touch's raw target view
-    up to the startingPoint, and finds either a view that returns YES to captureTouch() or
-    touchStart().
-  */
-  captureTouch: function(startingPoint, shouldStack) {
-    this.touchContext.captureTouch(this, startingPoint, shouldStack);
-  },
-
-  /**
-    Returns all touches for a specified view. Put as a convenience on the touch itself; this method
-    is also available on the event.
-  */
-  touchesForView: function(view) {
-    return this.touchContext.touchesForView(view);
-  },
-
-  /**
-    Same as touchesForView, but sounds better for responders.
-  */
-  touchesForResponder: function(responder) {
-    return this.touchContext.touchesForView(responder);
-  },
-
-  /**
-    Returns average data--x, y, and d (distance)--for the touches owned by the supplied view.
-
-    addSelf adds this touch to the set being considered. This is useful from touchStart. If
-    you use it from anywhere else, it will make this touch be used twice--so use caution.
-  */
-  averagedTouchesForView: function(view, addSelf) {
-    return this.touchContext.averagedTouchesForView(view, (addSelf ? this : null));
-  }
-};
-
-SC.mixin(SC.Touch, {
-  create: function(touch, touchContext) {
-    return new SC.Touch(touch, touchContext);
-  }
 });
 
 /*
