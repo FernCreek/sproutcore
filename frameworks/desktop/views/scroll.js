@@ -911,7 +911,53 @@ SC.ScrollView = SC.View.extend({
   // Touch Support
   //
 
-  // TODO_JA - Implement Touch Support
+  /**
+   * Handles touch move events
+   * @param {SC.Event} event - The touch event
+   * @returns {Boolean} If the event was handled
+   */
+  touchesDragged: function (event) {
+    var shouldScroll = false;
+    var touchStart = event.touchStartEvent;
+    var verticalScrollOffset = this.get('verticalScrollOffset');
+    var horizontalScrollOffset = this.get('horizontalScrollOffset');
+    var maximumVerticalScrollOffset = this.get('maximumVerticalScrollOffset');
+    var maximumHorizontalScrollOffset = this.get('maximumHorizontalScrollOffset');
+    var deltaX, deltaY;
+
+    // TODO_JA - This logic means any touch move in a scroll view scrolls, which won't work with Drag & Drop
+    if (touchStart) {
+
+      // determine the change in scroll since the last event
+      if (this._lastTouchDrag && this._lastTouchDrag.touchStartEvent === touchStart) {
+        deltaX = event.pageX - this._lastTouchDrag.pageX;
+        deltaY = event.pageY - this._lastTouchDrag.pageY;
+      } else {
+        deltaX = event.pageX - touchStart.pageX;
+        deltaY = event.pageY - touchStart.pageY;
+      }
+
+      // check if we can scroll
+      if (this.get('canScrollVertical')) {
+        shouldScroll = (deltaY > 0 && verticalScrollOffset > 0) ||
+          (deltaY < 0 && verticalScrollOffset < maximumVerticalScrollOffset);
+      }
+
+      if (this.get('canScrollHorizontal') && !shouldScroll) {
+        shouldScroll = (deltaX > 0 && horizontalScrollOffset > 0) ||
+          (deltaX < 0 && horizontalScrollOffset < maximumHorizontalScrollOffset);
+      }
+    }
+
+    if (shouldScroll) {
+      this._lastTouchDrag = event;
+      // perform the scroll, reverse sign of delta since touch scrolling is backwards from mouse wheel scrolling
+      this.scrollBy(deltaX * -1, deltaY * -1);
+    }
+
+    return shouldScroll;
+  },
+
 
   // ..........................................................
   // INTERNAL SUPPORT

@@ -2,5 +2,9 @@
 
 .sc-split-divider-view {
   background-color: #ddd;
+
+  /* Prevent browser scroll attempts. */
+  -ms-touch-action: none;
+  touch-action: none;
 }
 

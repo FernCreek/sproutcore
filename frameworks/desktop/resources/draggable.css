@@ -1,0 +1,5 @@
+.sc-view.sc-draggable:not(.is-anchored) {
+  /* Prevent browser scroll attempts within draggable views. */
+  -ms-touch-action: none;
+  touch-action: none;
+}

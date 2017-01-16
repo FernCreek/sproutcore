@@ -1,0 +1,5 @@
+.sc-scroll-view {
+  /* Prevent browser scroll attempts within scroll views. */
+  -ms-touch-action: none;
+  touch-action: none;
+}
