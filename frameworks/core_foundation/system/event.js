@@ -41,8 +41,8 @@ SC.Event = function(originalEvent) {
     }
   }
 
-  // Information about the current touch, populate if this is a touch event
-  this.activeTouch = null;
+  // The SC.Event of the touchstart event if this is a touch event
+  this.touchStartEvent = null;
 
   // Fix timeStamp
   this.timeStamp = this.timeStamp || Date.now();
@@ -945,8 +945,8 @@ SC.Event.prototype = {
 
   /**
    * Copies members from the passed touch to this event so this event is similar to a mouse event. The properties copied
-   * are the standard mouse X & Y coordinate properties and the target of the touch
-   * @param {Touch} touch - The touch object to copy properties from
+   * are the standard mouse X & Y coordinate properties.
+   * @param {Touch} touch - The browser touch object to copy properties from
    */
   copyTouchProperties: function (touch) {
     this.clientX = touch.clientX;
@@ -955,7 +955,16 @@ SC.Event.prototype = {
     this.pageY = touch.pageY;
     this.screenX = touch.screenX;
     this.screenY = touch.screenY;
-    this.target = touch.target;
+  },
+
+  /**
+   * Converts this touch event to a mouse event so it has the same expected members as a mouse event.
+   * @param {Touch} touch - The browser touch object to copy properties from
+   */
+  convertTouchEventToMouseEvent: function (touch) {
+    // Touches for touchmove & touchend events have their target as the touchstart's target element, which is wrong for
+    // mouse events
+    this.target = document.elementFromPoint(this.pageX, this.pageY);
   }
 };
 

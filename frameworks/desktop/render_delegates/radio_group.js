@@ -107,9 +107,8 @@ SC.BaseTheme.radioGroupRenderDelegate = SC.RenderDelegate.create({
     @param {jQuery} jquery A jQuery instance with the DOM for this radio group.
     @param {SC.Event} event The event.
   */
-  
   indexForEvent: function(dataSource, jquery, event) {
-    var index = $(evt.target).closest('.sc-radio-button').attr('index');
+    var index = $(event.target).closest('.sc-radio-button').attr('index');
     if (isNaN(index)) return undefined;
     return parseInt(index, 0);
   }

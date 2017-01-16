@@ -761,7 +761,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         touchStartEvent: event
       };
 
-      event.activeTouch = this._activeTouch;
+      event.touchStartEvent = event;
 
       view = this.sendEvent('touchStart', event, view);
 
@@ -769,6 +769,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
 
       if (!view) {
         // no one handled the touch, try sending it as a mouse event
+        event.convertTouchEventToMouseEvent(touch);
         this.mousedown(event);
       }
 
@@ -801,14 +802,17 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
       }
 
       if (handleTouchMove) {
+        // For touchmove the target of the touch is always the same as the touchstart target, so the view should be the
+        // same, but if if the touchStart event wasn't handled we have no touchStartView on the active touch and we
+        // still need to send touchesDragged events to support touch scrolling and touch dragging
         view = this.targetViewForEvent(event);
 
         event.copyTouchProperties(touch);
-        event.activeTouch = this._activeTouch;
-        view = this.sendEvent('touchesDragged', event, view);
+        event.touchStartEvent = this._activeTouch.touchStartEvent;
 
-        if (!view) {
+        if (!view || !this.sendEvent('touchesDragged', event, view)) {
           // no one handled the touch, try sending it as a mouse event
+          event.convertTouchEventToMouseEvent(touch);
           this.mousemove(event);
         }
       }
@@ -839,14 +843,19 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
 
         handleTouchEnd = touch.identifier === this._activeTouch.touchID;
       }
-      view = this._activeTouch.touchStartView;
 
       if (handleTouchEnd) {
-        event.copyTouchProperties(touch);
-        event.activeTouch = this._activeTouch;
+        // For touchend the target of the touch is always the same as the touchstart target, so the view should be the same
+        view = this._activeTouch.touchStartView;
 
-        if (!view || !this.sendEvent('touchEnd', event, view)) {
-          // no one handled the touch, try sending it as a mouse event
+        event.copyTouchProperties(touch);
+        event.touchStartEvent = this._activeTouch.touchStartEvent;
+
+        if (view) {
+          // View handled touchStart so it must handle touchEnd
+          this.sendEvent('touchEnd', event, view);
+        } else {
+          event.convertTouchEventToMouseEvent(touch);
           this.mouseup(event);
         }
 
@@ -865,6 +874,9 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
   touchcancel: function (event) {
     console.log('Touch cancel sent');
     // TODO_JA - treat this the same as an end?
+
+    // clear touch data now that touch is over
+    this._activeTouch = null;
   },
 
   // ...........................................................................
@@ -902,14 +914,14 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
       // We don't really need this information for pointer events but we have to track it so the events we send will be
       // the same as a touch event
       this._activePointer = {
-        touchID: pointerEvent.pointerId,
-        touchStartEvent: event
+        pointerId: pointerEvent.pointerId,
+        pointerDownEvent: event
       };
-      event.activeTouch = this._activePointer;
+      event.touchStartEvent = event;
 
       view = this.sendEvent('touchStart', event, view);
 
-      this._activePointer.touchStartView = view;
+      this._activePointer.pointerDownView = view;
 
       if (!view) {
         // no one handled the touch, try sending it as a mouse event
@@ -947,11 +959,9 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
       view = this.targetViewForEvent(event);
 
       // Retain compatibility with touch events
-      event.activeTouch = this._activePointer;
+      event.touchStartEvent = this._activePointer.pointerDownEvent;
 
-      view = this.sendEvent('touchesDragged', event, view);
-
-      if (!view) {
+      if (!view || !this.sendEvent('touchesDragged', event, view)) {
         // no one handled the touch, try sending it as a mouse event
         this.mousemove(event);
       }
@@ -973,13 +983,15 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
       allowCompatibilityEvent = false;
 
-      view = this._activePointer.touchStartView;
+      view = this._activePointer.pointerDownView;
 
       // Retain compatibility with touch events
-      event.activeTouch = this._activePointer;
+      event.touchStartEvent = this._activePointer.pointerDownEvent;
 
-      if (!view || !this.sendEvent('touchEnd', event, view)) {
-        // no one handled the touch, try sending it as a mouse event
+      if (view) {
+        // View handled touchStart so it must handle touchEnd
+        this.sendEvent('touchEnd', event, view);
+      } else {
         this.mouseup(event);
       }
 
