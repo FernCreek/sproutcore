@@ -52,20 +52,6 @@ module("SC.offset", {
               layout: { top: 10, left: 10, width: 20, height: 20 }
             })]
         })]
-
-      // Useful for debugging in iOS
-      // /** Allow default touch events */
-      //  touchStart: function(touch) {
-      //    if (SC.browser.isMobileSafari) touch.allowDefault();
-      //  },
-      //
-      //  touchesDragged: function(evt, touches) {
-      //    if (SC.browser.isMobileSafari) evt.allowDefault();
-      //  },
-      //
-      //  touchEnd: function(touch) {
-      //    if (SC.browser.isMobileSafari) touch.allowDefault();
-      //  }
     });
     pane.append();
     SC.RunLoop.end();

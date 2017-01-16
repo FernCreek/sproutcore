@@ -477,27 +477,6 @@ SC.ListItemView = SC.View.extend(SC.InlineEditable, SC.Control,
   },
 
   /** @private */
-  touchStart: function(evt){
-    return this.mouseDown(evt);
-  },
-
-  /** @private */
-  touchEnd: function(evt){
-    return this.mouseUp(evt);
-  },
-
-  /** @private */
-  touchEntered: function(evt){
-    return this.mouseEntered(evt);
-  },
-
-  /** @private */
-  touchExited: function(evt){
-    return this.mouseExited(evt);
-  },
-
-
-  /** @private */
   _addCheckboxActiveState: function() {
     if (this.get('isEnabled')) {
       if (this._checkboxRenderDelegate) {

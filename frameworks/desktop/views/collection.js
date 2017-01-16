@@ -2405,9 +2405,10 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
   // ..........................................................
   // TOUCH EVENTS
   //
+    // TODO_JA - Add touch support
 
   /** @private */
-  touchStart: function(touch, evt) {
+  old_touchStart: function(touch, evt) {
     var itemView = this.itemViewForEvent(touch),
         contentIndex = itemView ? itemView.get('contentIndex') : -1;
 
@@ -2430,7 +2431,7 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
   },
 
   /** @private */
-  touchesDragged: function(evt, touches) {
+  old_touchesDragged: function(evt, touches) {
     touches.forEach(function(touch){
       if (
         Math.abs(touch.pageX - touch.startX) > 5 ||
@@ -2444,7 +2445,7 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
   },
 
   /** @private */
-  touchEnd: function(touch) {
+  old_touchEnd: function(touch) {
     /*
       TODO [CC] We should be using itemViewForEvent here, but because
             ListItemView re-renders itself once isSelected is called
@@ -2482,7 +2483,7 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
   },
 
   /** @private */
-  touchCancelled: function(evt) {
+  old_touchCancelled: function(evt) {
     // Remove fake selection
     if (this._touchSelectedView) {
       this._touchSelectedView.set('isSelected', NO);

@@ -436,17 +436,6 @@ SC.RadioView = SC.View.extend(SC.Control,
     evt.allowDefault();
 
     return NO;
-  },
-  
-
-  /** @private */
-  touchStart: function(evt) {
-    return this.mouseDown(evt);
-  },
-
-  /** @private */
-  touchEnd: function(evt) {
-    return this.mouseUp(evt);
   }
 
 });

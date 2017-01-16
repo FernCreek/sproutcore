@@ -376,10 +376,6 @@ SC.InlineTextFieldView = SC.TextFieldView.extend(SC.InlineEditor,
     return this.get('isEditing');
   },
 
-  touchStart: function(e){
-    this.mouseDown(e);
-  },
-
   /** @private */
   keyDown: function(evt) {
     var ret = this.interpretKeyEvents(evt) ;
