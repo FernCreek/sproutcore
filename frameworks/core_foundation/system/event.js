@@ -5,7 +5,7 @@
 // License:   Licensed under MIT license (see license.js)
 // ==========================================================================
 
-sc_require('system/core_query') ;
+sc_require('system/core_query');
 
 /**
   The event class provides a simple cross-platform library for capturing and
@@ -79,6 +79,10 @@ SC.Event = function(originalEvent) {
   if (!this.which && this.button) {
     this.which = ((this.button & 1) ? 1 : ((this.button & 2) ? 3 : ( (this.button & 4) ? 2 : 0 ) ));
   }
+
+  this.isPointerEvent = SC.platform.supportsPointerEvents && originalEvent instanceof window.PointerEvent;
+  this.isTouchEvent = SC.platform.supportsTouchEvents && originalEvent instanceof window.TouchEvent;
+
 
   // Normalize wheel delta values for mousewheel events
   if (this.type === 'mousewheel' || this.type === 'DOMMouseScroll' || this.type === 'MozMousePixelScroll') {
@@ -949,22 +953,40 @@ SC.Event.prototype = {
    * @param {Touch} touch - The browser touch object to copy properties from
    */
   copyTouchProperties: function (touch) {
-    this.clientX = touch.clientX;
-    this.clientY = touch.clientY;
-    this.pageX = touch.pageX;
-    this.pageY = touch.pageY;
-    this.screenX = touch.screenX;
-    this.screenY = touch.screenY;
+    if (this.isTouchEvent && touch) {
+      this.clientX = touch.clientX;
+      this.clientY = touch.clientY;
+      this.pageX = touch.pageX;
+      this.pageY = touch.pageY;
+      this.screenX = touch.screenX;
+      this.screenY = touch.screenY;
+    }
   },
 
   /**
    * Converts this touch event to a mouse event so it has the same expected members as a mouse event.
-   * @param {Touch} touch - The browser touch object to copy properties from
    */
-  convertTouchEventToMouseEvent: function (touch) {
-    // Touches for touchmove & touchend events have their target as the touchstart's target element, which is wrong for
-    // mouse events
-    this.target = document.elementFromPoint(this.pageX, this.pageY);
+  convertTouchEventToMouseEvent: function () {
+    if (this.isTouchEvent) {
+      // Touches for touchmove & touchend events have their target as the touchstart's target element, which is wrong for
+      // mouse events
+      this.target = document.elementFromPoint(this.pageX, this.pageY);
+    }
+  },
+
+  /**
+   * For touch & pointer events this tracks if the browser compatibility mouse events should be generated.
+   * @type {Boolean}
+   */
+  sendCompatibilityEvents: false,
+
+  /**
+   * Indicates that we should let the browser generate compatibility mouse events for this event.
+   */
+  allowCompatibilityEvents: function () {
+    if (this.isTouchEvent || this.isPointerEvent) {
+      this.sendCompatibilityEvents = true;
+    }
   }
 };
 

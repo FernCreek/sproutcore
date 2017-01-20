@@ -769,7 +769,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
 
       if (!view) {
         // no one handled the touch, try sending it as a mouse event
-        event.convertTouchEventToMouseEvent(touch);
+        event.convertTouchEventToMouseEvent();
         this.mousedown(event);
       }
 
@@ -777,8 +777,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     }
     // else this start was part of a multi-touch which isn't supported
 
-    // Always cancel the event to prevent the browser from generating compatibility mouse events, we don't need them
-    return false;
+    return event.sendCompatibilityEvents;
   },
 
   /**
@@ -812,7 +811,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
 
         if (!view || !this.sendEvent('touchesDragged', event, view)) {
           // no one handled the touch, try sending it as a mouse event
-          event.convertTouchEventToMouseEvent(touch);
+          event.convertTouchEventToMouseEvent();
           this.mousemove(event);
         }
       }
@@ -820,8 +819,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     }
     // else there was no touchstart, just ignore it
 
-    // Always cancel the event to prevent the browser from generating compatibility mouse events, we don't need them
-    return false;
+    return event.sendCompatibilityEvents;
   },
 
   /**
@@ -855,7 +853,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
           // View handled touchStart so it must handle touchEnd
           this.sendEvent('touchEnd', event, view);
         } else {
-          event.convertTouchEventToMouseEvent(touch);
+          event.convertTouchEventToMouseEvent();
           this.mouseup(event);
         }
 
@@ -867,8 +865,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     }
     // else there was no corresponding touchstart, just ignore it
 
-    // Always cancel the event to prevent the browser from generating compatibility mouse events, we don't need them
-    return false;
+    return event.sendCompatibilityEvents;
   },
 
   touchcancel: function (event) {
@@ -898,7 +895,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     // existing functionality we want the browser to change the mouse pointer events into normal mouse events and only
     // try to handle touch events here
     if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
-      allowCompatibilityEvent = false;
 
       view = this.targetViewForEvent(event);
 
@@ -927,6 +923,8 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         // no one handled the touch, try sending it as a mouse event
         this.mousedown(event);
       }
+
+      allowCompatibilityEvent = event.sendCompatibilityEvents;
     }
     // else this was an actual mouse event or some pointer type we don't support in which case we want the compatibility
     // event or this was a non-primary touch event which we ignore, since we don't support multi-touch
@@ -954,7 +952,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     // existing functionality we want the browser to change the mouse pointer events into normal mouse events and only
     // try to handle touch events here
     if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
-      allowCompatibilityEvent = false;
 
       view = this.targetViewForEvent(event);
 
@@ -965,6 +962,8 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         // no one handled the touch, try sending it as a mouse event
         this.mousemove(event);
       }
+
+      allowCompatibilityEvent = event.sendCompatibilityEvents;
     }
 
     return allowCompatibilityEvent;
@@ -981,7 +980,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     var view;
 
     if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
-      allowCompatibilityEvent = false;
+
 
       view = this._activePointer.pointerDownView;
 
@@ -996,6 +995,8 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
       }
 
       // TODO_JA - prevent click events like mouse events do? Even needed?
+
+      allowCompatibilityEvent = event.sendCompatibilityEvents;
 
       // clean up
       this._activePointer = null;

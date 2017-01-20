@@ -157,8 +157,13 @@ SC.platform = SC.Object.create({
    * If PointerEvents are supported.
    * @property {Boolean}
    */
-  supportsPointerEvents: !!window.PointerEvent
+  supportsPointerEvents: !!window.PointerEvent,
 
+  /**
+   * If Touch Events are supported
+   * @property {Boolean}
+   */
+  supportsTouchEvents: !!window.TouchEvent
 });
 
 /* Calculate CSS Prefixes */
