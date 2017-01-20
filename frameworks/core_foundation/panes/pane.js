@@ -13,7 +13,6 @@ sc_require('views/view/keyboard');
 sc_require('views/view/layout');
 sc_require('views/view/manipulation');
 sc_require('views/view/theming');
-sc_require('views/view/touch');
 sc_require('views/view/visibility');
 sc_require('mixins/responder_context');
 
