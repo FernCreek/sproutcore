@@ -2310,23 +2310,23 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
         this.select(contentIndex, YES) ;
       }
 
-    } else if(info) {
+    } else if (info) {
       idx = info.contentIndex;
-      contentIndex = (view) ? view.get('contentIndex') : -1 ;
+      contentIndex = view ? view.get('contentIndex') : -1;
 
       // this will be set if the user simply clicked on an unselected item and
       // selectOnMouseDown was NO.
-      if (info.shouldSelect) this.select(idx, info.modifierKeyPressed);
+      if (info.shouldSelect && idx === contentIndex) this.select(idx, info.modifierKeyPressed);
 
       // This is true if the user clicked on a selected item with a modifier
       // key pressed.
-      if (info.shouldDeselect) this.deselect(idx);
+      if (info.shouldDeselect && idx === contentIndex) this.deselect(idx);
 
       // This is true if the user clicked on a selected item without a
       // modifier-key pressed.  When this happens we try to begin editing
       // on the content.  If that is not allowed, then simply clear the
       // selection and reselect the clicked on item.
-      if (info.shouldReselect) {
+      if (info.shouldReselect && idx === contentIndex) {
 
         // - contentValueIsEditable is true
         canEdit = this.get('isEditable') && this.get('canEditContent') ;
@@ -2400,95 +2400,6 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
     this._lastHoveredItem = null ;
     if (view && view.mouseExited) view.mouseExited(ev) ;
     return YES ;
-  },
-
-  // ..........................................................
-  // TOUCH EVENTS
-  //
-    // TODO_JA - Add touch support
-
-  /** @private */
-  old_touchStart: function(touch, evt) {
-    var itemView = this.itemViewForEvent(touch),
-        contentIndex = itemView ? itemView.get('contentIndex') : -1;
-
-    if (!this.get('isEnabled')) return contentIndex > -1;
-
-    // become first responder if possible.
-    this.becomeFirstResponder(touch);
-
-    this._touchSelectedView = itemView;
-
-    if (!this.get('useToggleSelection')) {
-      // We're faking the selection visually here
-      // Only track this if we added a selection so we can remove it later
-      if (itemView && !itemView.get('isSelected')) {
-        itemView.set('isSelected', YES);
-      }
-    }
-
-    return YES;
-  },
-
-  /** @private */
-  old_touchesDragged: function(evt, touches) {
-    touches.forEach(function(touch){
-      if (
-        Math.abs(touch.pageX - touch.startX) > 5 ||
-        Math.abs(touch.pageY - touch.startY) > 5
-      ) {
-        // This calls touchCancelled
-        touch.makeTouchResponder(touch.nextTouchResponder);
-      }
-    }, this);
-
-  },
-
-  /** @private */
-  old_touchEnd: function(touch) {
-    /*
-      TODO [CC] We should be using itemViewForEvent here, but because
-            ListItemView re-renders itself once isSelected is called
-            in touchStart, the elements attached to this event are
-            getting orphaned and this event is basically a complete
-            fail when using touch events.
-    */
-    // var itemView = this.itemViewForEvent(touch),
-    var itemView = this._touchSelectedView,
-        contentIndex = itemView ? itemView.get('contentIndex') : -1,
-        isSelected = NO, sel;
-
-    if (!this.get('isEnabled')) return contentIndex > -1;
-
-    // Remove fake selection in case our contentIndex is -1, a select event will add it back
-    if (itemView) { itemView.set('isSelected', NO); }
-
-    if (contentIndex > -1) {
-      if (this.get('useToggleSelection')) {
-        sel = this.get('selection');
-        isSelected = sel && sel.containsObject(itemView.get('content'));
-      }
-
-      if (isSelected) {
-        this.deselect(contentIndex);
-      } else {
-        this.select(contentIndex, NO);
-
-        // If actOnSelect is implemented, the action will be fired.
-        this._cv_performSelectAction(itemView, touch, 0);
-      }
-    }
-
-    this._touchSelectedView = null;
-  },
-
-  /** @private */
-  old_touchCancelled: function(evt) {
-    // Remove fake selection
-    if (this._touchSelectedView) {
-      this._touchSelectedView.set('isSelected', NO);
-      this._touchSelectedView = null;
-    }
   },
 
   /** @private */
@@ -2596,7 +2507,7 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
     - the dragDataTypes property returns a non-empty array
     - a mouse down event was saved by the mouseDown method.
   */
-  mouseDragged: function(ev) {
+  mouseDragged: function (event) {
     var del     = this.get('selectionDelegate'),
         content = this.get('content'),
         sel     = this.get('selection'),
@@ -2610,32 +2521,35 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
     // Don't do anything unless the user has been dragging for 123msec
     if ((Date.now() - info.at) < 123) return YES ;
 
-    // OK, they must be serious, decide if a drag will be allowed.
-    if (del.collectionViewShouldBeginDrag(this)) {
+    /**
+     * First, get the selection to drag. Drag an array of selected items
+     * appearing in this collection, in the order of the collection.
+     * Compute the dragContent - the indexes we will be dragging.
+     *
+     * If we don't select on mouse down, then the selection has not been
+     * updated to whatever the user clicked so use mouse down content,
+     * unless they mouse downed on a selected item, then assume they mean
+     * to drag the selection.
+     */
+    if (!this.get('selectOnMouseDown') && (!info.itemView || !info.itemView.get('isSelected'))) {
+      dragContent = SC.IndexSet.create(info.contentIndex);
+    } else dragContent = sel ? sel.indexSetForSource(content) : null;
 
-      // First, get the selection to drag.  Drag an array of selected
-      // items appearing in this collection, in the order of the
-      // collection.
-      //
-      // Compute the dragContent - the indexes we will be dragging.
-      // if we don't select on mouse down, then the selection has not been
-      // updated to whatever the user clicked.  Instead use
-      // mouse down content.
-      if (!this.get("selectOnMouseDown")) {
-        dragContent = SC.IndexSet.create(info.contentIndex);
-      } else dragContent = sel ? sel.indexSetForSource(content) : null;
+    // remove any group indexes.  groups cannot be dragged.
+    if (dragContent && groupIndexes && groupIndexes.get('length')>0) {
+      dragContent = dragContent.copy().remove(groupIndexes);
+      if (dragContent.get('length')===0) dragContent = null;
+      else dragContent.freeze();
+    }
 
-      // remove any group indexes.  groups cannot be dragged.
-      if (dragContent && groupIndexes && groupIndexes.get('length')>0) {
-        dragContent = dragContent.copy().remove(groupIndexes);
-        if (dragContent.get('length')===0) dragContent = null;
-        else dragContent.freeze();
-      }
+    if (!dragContent) return YES; // nothing to drag
+    else dragContent = dragContent.frozenCopy(); // so it doesn't change
 
-      if (!dragContent) return YES; // nothing to drag
-      else dragContent = dragContent.frozenCopy(); // so it doesn't change
+    // Now that we now the proposed drag check if we should actually drag
+    if (del.collectionViewShouldBeginDrag(this, dragContent, event)) {
 
       dragContent = { content: content, indexes: dragContent };
+
       this.set('dragContent', dragContent) ;
 
       // Get the set of data types supported by the delegate.  If this returns
@@ -3063,7 +2977,7 @@ SC.CollectionView = SC.View.extend(SC.CollectionViewDelegate, SC.CollectionConte
 
     @param {SC.View} view
   */
-  collectionViewShouldBeginDrag: function(view) {
+  collectionViewShouldBeginDrag: function (collectionView, dragIndices, dragEvent) {
     return this.get('canReorderContent');
   },
 

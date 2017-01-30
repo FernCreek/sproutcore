@@ -117,8 +117,7 @@ SC.View.reopen(
   
   @extends SC.Object
 */
-SC.Drag = SC.Object.extend(
-/** @scope SC.Drag.prototype */ {
+SC.Drag = SC.Object.extend(/** @scope SC.Drag.prototype */ {
   
   /**
     The source object used to coordinate this drag.
@@ -204,6 +203,21 @@ SC.Drag = SC.Object.extend(
     @type Point
   */
   location: {},
+
+  /**
+   * For TouchEvents the target element for touchmove & touchend is the same as
+   * the touchstart. So if the touchstart target is removed from the document
+   * the browser stops sending us touch events. This breaks drag & drop if auto
+   * scroll, scrolls the target out of the viewport and incremental rendering
+   * causes the target to be removed by the document.
+   *
+   * This flag controls if auto scrolling is enabled or not for Touch Events.
+   * If the browser is sending Pointer Events this flag has no effect as
+   * Pointer Events have the correct target element.
+   *
+   * @type {Boolean}
+   */
+  allowTouchAutoScroll: false,
   
   // ..........................................
   // DRAG DATA
@@ -343,11 +357,11 @@ SC.Drag = SC.Object.extend(
   /** @private
     This will actually start the drag process. Called by SC.Drag.start().
   */
-  startDrag: function() {
-		if (this.get('sourceIsDraggable')) {
-	    // create the ghost view
-	    this._createGhostView() ;
-		}
+  startDrag: function () {
+    if (this.get('sourceIsDraggable')) {
+      // create the ghost view
+      this._createGhostView() ;
+    }
     
     var evt = this.event ;
     
@@ -355,42 +369,29 @@ SC.Drag = SC.Object.extend(
     
     var loc = { x: evt.pageX, y: evt.pageY } ;
     this.set('location', loc) ;
-    
-		if (this.get('sourceIsDraggable')) {
-	    var dv = this._getDragView() ;
-	    var pv = dv.get('parentView') ;
 
-	    // convert to global coordinates
-	    var origin = pv ? pv.convertFrameToView(dv.get('frame'), null) : dv.get('frame') ;
+    if (this.get('sourceIsDraggable')) {
+      var dv = this._getDragView() ;
+      var pv = dv.get('parentView') ;
 
-	    if (this.get('ghost')) {
-	      // Hide the dragView
-	      this._dragViewWasVisible = dv.get('isVisible') ;
-	      dv.set('isVisible', NO) ;
-	    }
+      // convert to global coordinates
+      var origin = pv ? pv.convertFrameToView(dv.get('frame'), null) : dv.get('frame') ;
 
-	    if (this.ghostActsLikeCursor) this.ghostOffset = { x: 14, y: 14 };
-	    else this.ghostOffset = { x: (loc.x-origin.x), y: (loc.y-origin.y) } ;
-    
-	    // position the ghost view
-	    if(!this._ghostViewHidden) this._positionGhostView(evt) ;
-    
-	    if (evt.makeTouchResponder) {
-	      // Should use invokeLater if I can figure it out
-	      var self = this;
-	      SC.Timer.schedule({ 
-	        target: evt, 
-	        action: function() { 
-	          if (!evt.hasEnded) evt.makeTouchResponder(self, YES);
-	        }, 
-	        interval: 1
-	      });
-	    } 
-	    else {
-	      // notify root responder that a drag is in process
-	      this.ghostView.rootResponder.dragDidStart(this, evt) ;
-	    }
-		}
+      if (this.get('ghost')) {
+        // Hide the dragView
+        this._dragViewWasVisible = dv.get('isVisible') ;
+        dv.set('isVisible', NO) ;
+      }
+
+      if (this.ghostActsLikeCursor) this.ghostOffset = { x: 14, y: 14 };
+      else this.ghostOffset = { x: (loc.x-origin.x), y: (loc.y-origin.y) } ;
+
+      // position the ghost view
+      if (!this._ghostViewHidden) this._positionGhostView(evt) ;
+
+      // notify root responder that a drag is in process
+      this.ghostView.rootResponder.dragDidStart(this, evt) ;
+    }
     
     var source = this.source ;
     if (source && source.dragDidBegin) source.dragDidBegin(this, loc) ;
@@ -432,16 +433,21 @@ SC.Drag = SC.Object.extend(
 
     this._lastTarget = null;
     this._dragInProgress = NO;
+
+    // trigger a cleanup on any scroll views we may have scrolled
+    var scrollViews = this._scrollableViews();
+    if (scrollViews) {
+      scrollViews.forEach(function (scrollView) {
+        if (scrollView && scrollView.cleanupAfterDrag) {
+          scrollView.cleanupAfterDrag();
+        }
+      });
+    }
   },
   
   // ..........................................
   // PRIVATE PROPERTIES AND METHODS
   //
-
-  /** @private */
-  touchStart: function(evt) {
-    return YES;
-  },
 
   /** @private
     This method is called repeatedly during a mouse drag.  It updates the
@@ -508,10 +514,6 @@ SC.Drag = SC.Object.extend(
     if(this.get('sourceIsDraggable') && !this._ghostViewHidden) this._positionGhostView(evt) ;
   },
 
-  touchesDragged: function(evt){
-    this.mouseDragged(evt);
-  },
-
   /**
     @private
     
@@ -570,11 +572,16 @@ SC.Drag = SC.Object.extend(
     
     this._lastTarget = null ;
     this._dragInProgress = NO ; // required by autoscroll (invoked by a timer)
-  },
 
-  /** @private */
-  touchEnd: function(evt){
-    this.mouseUp(evt);
+    // trigger a cleanup on any scroll views we may have scrolled
+    var scrollViews = this._scrollableViews();
+    if (scrollViews) {
+      scrollViews.forEach(function (scrollView) {
+        if (scrollView && scrollView.cleanupAfterDrag) {
+          scrollView.cleanupAfterDrag();
+        }
+      });
+    }
   },
 
   /** @private
@@ -664,7 +671,7 @@ SC.Drag = SC.Object.extend(
   /** @private */
   _destroyGhostView: function() {
     if (this.ghostView) {
-      this.ghostView.remove() ;
+      this.ghostView.remove();
       this.ghostView = null ; // this will allow the GC to collect it.
       this._ghostViewHidden = NO;
     }
@@ -774,6 +781,9 @@ SC.Drag = SC.Object.extend(
     
     // If drag has ended, exit
     if (!this._dragInProgress) return NO;
+
+    // Prevent touch auto scroll if requested
+    if (evt && evt._isTouchEvent && !this.get('allowTouchAutoScroll')) return false;
     
     // STEP 1: Find the first view that we can actually scroll.  This view 
     // must be:

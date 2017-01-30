@@ -41,8 +41,7 @@ SC.LIST_ITEM_ACTION_EJECT = 'sc-list-item-cancel-eject';
   @extends SC.StaticLayout
   @since SproutCore 1.0
 */
-SC.ListItemView = SC.View.extend(SC.InlineEditable, SC.Control,
-/** @scope SC.ListItemView.prototype */ {
+SC.ListItemView = SC.View.extend(SC.InlineEditable, SC.Control, /** @scope SC.ListItemView.prototype */ {
 
   /**
     @type Array
@@ -56,8 +55,15 @@ SC.ListItemView = SC.View.extend(SC.InlineEditable, SC.Control,
     @default ['disclosureState', 'escapeHTML']
     @see SC.View#displayProperties
   */
-  displayProperties: ['disclosureState', 'escapeHTML', 'isDropTarget'],
+  displayProperties: ['disclosureState', 'escapeHTML'],
 
+  /**
+   * Adds the drop-target class, done via a classNamingBinding instead of a display property as to not
+   * cause problems with touch drag & drop.
+   *
+   * @type {Array}
+   */
+  classNameBindings: ['isDropTarget:drop-target'],
 
   // ..........................................................
   // KEY PROPERTIES
@@ -728,7 +734,6 @@ SC.ListItemView = SC.View.extend(SC.InlineEditable, SC.Control,
     // add alternating row classes
     classArray.push((this.get('contentIndex')%2 === 0) ? 'even' : 'odd');
     context.setClass('disabled', !this.get('isEnabled'));
-    context.setClass('drop-target', this.get('isDropTarget'));
 
     // outline level wrapper
     working = context.begin("div").addClass("sc-outline");
