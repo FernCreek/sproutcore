@@ -41,9 +41,6 @@ SC.Event = function(originalEvent) {
     }
   }
 
-  // The SC.Event of the touchstart event if this is a touch event
-  this.touchStartEvent = null;
-
   // Fix timeStamp
   this.timeStamp = this.timeStamp || Date.now();
 
@@ -80,9 +77,8 @@ SC.Event = function(originalEvent) {
     this.which = ((this.button & 1) ? 1 : ((this.button & 2) ? 3 : ( (this.button & 4) ? 2 : 0 ) ));
   }
 
-  this.isPointerEvent = SC.platform.supportsPointerEvents && originalEvent instanceof window.PointerEvent;
-  this.isTouchEvent = SC.platform.supportsTouchEvents && originalEvent instanceof window.TouchEvent;
-
+  this._isPointerEvent = SC.platform.supportsPointerEvents && originalEvent instanceof window.PointerEvent;
+  this._isTouchEvent = SC.platform.supportsTouchEvents && originalEvent instanceof window.TouchEvent;
 
   // Normalize wheel delta values for mousewheel events
   if (this.type === 'mousewheel' || this.type === 'DOMMouseScroll' || this.type === 'MozMousePixelScroll') {
@@ -948,12 +944,43 @@ SC.Event.prototype = {
   },
 
   /**
+   * Gets the target view for this event
+   * @returns {SC.View|null} The event target view or null if there isn't one
+   */
+  getTargetView: function () {
+    return this.target ? SC.$(this.target).view()[0] : null;
+  },
+
+  /**
+   * If this is a touch event.
+   * @type {Boolean}
+   * @private
+   */
+  _isTouchEvent: false,
+
+  /**
+   * If this is a pointer event.
+   * @type {Boolean}
+   * @private
+   */
+  _isPointerEvent: false,
+
+  /**
+   * If this event is a touch event or a pointer event of type touch.
+   *
+   * @returns {Boolean} See description
+   */
+  isTouchEvent: function () {
+    return this._isTouchEvent || (this._isPointerEvent && this.originalEvent.pointerType === 'touch');
+  },
+
+  /**
    * Copies members from the passed touch to this event so this event is similar to a mouse event. The properties copied
    * are the standard mouse X & Y coordinate properties.
    * @param {Touch} touch - The browser touch object to copy properties from
    */
   copyTouchProperties: function (touch) {
-    if (this.isTouchEvent && touch) {
+    if (this._isTouchEvent && touch) {
       this.clientX = touch.clientX;
       this.clientY = touch.clientY;
       this.pageX = touch.pageX;
@@ -967,7 +994,7 @@ SC.Event.prototype = {
    * Converts this touch event to a mouse event so it has the same expected members as a mouse event.
    */
   convertTouchEventToMouseEvent: function () {
-    if (this.isTouchEvent) {
+    if (this._isTouchEvent) {
       // Touches for touchmove & touchend events have their target as the touchstart's target element, which is wrong for
       // mouse events
       this.target = document.elementFromPoint(this.pageX, this.pageY);
@@ -984,7 +1011,7 @@ SC.Event.prototype = {
    * Indicates that we should let the browser generate compatibility mouse events for this event.
    */
   allowCompatibilityEvents: function () {
-    if (this.isTouchEvent || this.isPointerEvent) {
+    if (this.isTouchEvent()) {
       this.sendCompatibilityEvents = true;
     }
   }
