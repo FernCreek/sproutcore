@@ -31,8 +31,7 @@
   @extends SC.View
   @since SproutCore 1.0
 */
-SC.ScrollerView = SC.View.extend(
-/** @scope SC.ScrollerView.prototype */ {
+SC.ScrollerView = SC.View.extend(/** @scope SC.ScrollerView.prototype */ {
 
   /**
     @type Array
@@ -73,11 +72,16 @@ SC.ScrollerView = SC.View.extend(
   */
   shouldScrollToClick: NO,
 
+  /**
+   * Touching the scroller should always prevent touch scrolling within the scroll view.
+   * @type {Boolean}
+   */
+  touchScrollingEnabled: false,
 
   /** @private
     The in-touch-scroll value.
   */
-  _touchScrollValue: NO,
+  _touchScrollValue: NO, // TODO_JA - remove?
 
   /**
     The value of the scroller.
@@ -351,6 +355,7 @@ SC.ScrollerView = SC.View.extend(
     }
   },
 
+    // TODO_JA - remove these?
   /** @private */
   touchScrollDidStart: function(value) {
     this.set("_touchScrollValue", value);
@@ -558,10 +563,11 @@ SC.ScrollerView = SC.View.extend(
         value, clickLocation, clickOffset,
         scrollerLength = this.get('scrollerLength');
 
+    // Convert the mouseDown coordinates to the view's coordinates
+    clickLocation = this.convertFrameFromView({ x: evt.pageX, y: evt.pageY });
+
     // Determine the subcontrol that was clicked
     if (target.className.indexOf('thumb') >= 0) {
-      // Convert the mouseDown coordinates to the view's coordinates
-      clickLocation = this.convertFrameFromView({ x: evt.pageX, y: evt.pageY });
 
       clickLocation.x -= thumbPosition;
       clickLocation.y -= thumbPosition;
@@ -607,6 +613,8 @@ SC.ScrollerView = SC.View.extend(
           this._mouseDownLocation = mousePosition = frame.x;
           break;
       }
+
+      this._lastMouseLocation = clickLocation;
 
       if (scrollToClick) {
         this.set('value', this.valueForPosition(mousePosition - (thumbLength / 2)));
@@ -685,6 +693,11 @@ SC.ScrollerView = SC.View.extend(
         isScrollingDown = this._isScrollingDown,
         active = this._scs_buttonActive,
         timer;
+
+    var clickLocation = this.convertFrameFromView({ x: evt.pageX, y: evt.pageY });
+    if (clickLocation) {
+      this._lastMouseLocation = clickLocation;
+    }
 
     // Only move the thumb if the user clicked on the thumb during mouseDown
     if (this._thumbDragging) {
@@ -789,17 +802,17 @@ SC.ScrollerView = SC.View.extend(
   */
   mouseDownTimerDidFire: function() {
     var scrollerLength = this.get('scrollerLength'),
-        mouseLocation = SC.device.get('mouseLocation'),
+        mouseLocation = this._lastMouseLocation,
         thumbPosition = this.get('thumbPosition'),
         thumbLength = this.get('thumbLength'),
         timerInterval = 50;
 
     switch (this.get('layoutDirection')) {
       case SC.LAYOUT_VERTICAL:
-        mouseLocation = this.convertFrameFromView(mouseLocation).y;
+        mouseLocation = mouseLocation.y;
         break;
       case SC.LAYOUT_HORIZONTAL:
-        mouseLocation = this.convertFrameFromView(mouseLocation).x;
+        mouseLocation = mouseLocation.x;
         break;
     }
 

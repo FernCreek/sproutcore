@@ -912,52 +912,163 @@ SC.ScrollView = SC.View.extend({
   //
 
   /**
+   * The last touch start event sent to this view or a child view.
+   * @type {SC.Event}
+   */
+  _touchStartEvent: null,
+
+  /**
+   * The last touch drag event sent while this view is crolling.
+   * @type {SC.Event}
+   */
+  _lastTouchDrag: null,
+
+
+  /**
+   * If we started touch scrolling.
+   * @type {Boolean}
+   */
+  _didTouchScroll: false,
+
+  /**
+   * If touch scrolling was allowed when we tried to scroll.
+   * @type {Boolean}
+   */
+  _scrollingIsAllowed: false,
+
+  /**
+   * Captures the touch start event to store a reference to the touch start event.
+   *
+   * @param {SC.Event} event - The touch start event
+   * @returns {Boolean} Returns false as we want to allow this even to be processed
+   */
+  touchStartCapture: function (event) {
+    this._touchStartEvent = event;
+    return false;
+  },
+
+  /**
+   * Listen for mouse down to ensure mouse down events are handled for touch input, this ensures we'll get a touch end
+   * event if the user didn't press on a view.
+   *
+   * @param {SC.View} event - The mouse down event
+   * @returns {Boolean} If we handled the event
+   */
+  mouseDown: function (event) {
+    // If this is a touch event then no control in the scrollable area is going to handle it, handle it ourselves so
+    // touchEnd/mouseUp events will be sent
+    return event.isTouchEvent();
+  },
+
+  /**
    * Handles touch move events
    * @param {SC.Event} event - The touch event
    * @returns {Boolean} If the event was handled
    */
   touchesDragged: function (event) {
     var shouldScroll = false;
-    var touchStart = event.touchStartEvent;
+    var scrollingAllowed = this._scrollingIsAllowed;
+    var touchStart = this._touchStartEvent;
     var verticalScrollOffset = this.get('verticalScrollOffset');
     var horizontalScrollOffset = this.get('horizontalScrollOffset');
     var maximumVerticalScrollOffset = this.get('maximumVerticalScrollOffset');
     var maximumHorizontalScrollOffset = this.get('maximumHorizontalScrollOffset');
-    var deltaX, deltaY;
+    var deltaX, deltaY, targetView;
 
-    // TODO_JA - This logic means any touch move in a scroll view scrolls, which won't work with Drag & Drop
-    if (touchStart) {
+    if (touchStart && event) {
 
-      // determine the change in scroll since the last event
-      if (this._lastTouchDrag && this._lastTouchDrag.touchStartEvent === touchStart) {
-        deltaX = event.pageX - this._lastTouchDrag.pageX;
-        deltaY = event.pageY - this._lastTouchDrag.pageY;
-      } else {
-        deltaX = event.pageX - touchStart.pageX;
-        deltaY = event.pageY - touchStart.pageY;
+      // this is the first drag, check if we can scroll
+      if (!this._lastTouchDrag) {
+        targetView = event.getTargetView();
+        scrollingAllowed = targetView ? targetView.get('allowTouchScrolling') : true;
       }
 
-      // check if we can scroll
-      if (this.get('canScrollVertical')) {
-        shouldScroll = (deltaY > 0 && verticalScrollOffset > 0) ||
-          (deltaY < 0 && verticalScrollOffset < maximumVerticalScrollOffset);
-      }
+      if (scrollingAllowed) {
+        // determine the change in scroll since the last event
+        if (this._lastTouchDrag) {
+          deltaX = event.pageX - this._lastTouchDrag.pageX;
+          deltaY = event.pageY - this._lastTouchDrag.pageY;
+        } else {
+          deltaX = event.pageX - touchStart.pageX;
+          deltaY = event.pageY - touchStart.pageY;
+        }
 
-      if (this.get('canScrollHorizontal') && !shouldScroll) {
-        shouldScroll = (deltaX > 0 && horizontalScrollOffset > 0) ||
-          (deltaX < 0 && horizontalScrollOffset < maximumHorizontalScrollOffset);
-      }
-    }
+        // check if we can scroll
+        if (this.get('canScrollVertical')) {
+          shouldScroll = deltaY > 0 && verticalScrollOffset > 0 ||
+            deltaY < 0 && verticalScrollOffset < maximumVerticalScrollOffset;
+        }
 
-    if (shouldScroll) {
+        if (this.get('canScrollHorizontal') && !shouldScroll) {
+          shouldScroll = deltaX > 0 && horizontalScrollOffset > 0 ||
+            deltaX < 0 && horizontalScrollOffset < maximumHorizontalScrollOffset;
+        }
+
+        this._didTouchScroll = true;
+
+        if (shouldScroll) {
+          // perform the scroll, reverse sign of delta since touch scrolling is backwards from mouse wheel scrolling
+          this.scrollBy(deltaX * -1, deltaY * -1);
+        }
+      }
+      this._scrollingIsAllowed = scrollingAllowed;
       this._lastTouchDrag = event;
-      // perform the scroll, reverse sign of delta since touch scrolling is backwards from mouse wheel scrolling
-      this.scrollBy(deltaX * -1, deltaY * -1);
     }
+
 
     return shouldScroll;
   },
 
+  /**
+   * Capture touch end events to cleanup once we have stopped scrolling.
+   *
+   * @param {SC.Event} event - The touch end event
+   * @returns {Boolean} If we handled this event
+   */
+  touchEndCapture: function (event) {
+    var didScroll = this._didTouchScroll;
+
+    this._resetTouchMembers();
+
+    // block other views from handling touch end if we scrolled, this prevents unexpected side effects of scrolling
+    return didScroll;
+  },
+
+  /**
+   * Capture mouse up events to cleanup once we have stopped scrolling. We need this listener in case no one handled
+   * touchStart but someone did handle mouseDown. In that case the root responder will send mouseUp but never touchEnd.
+   *
+   * @param {SC.Event} event - The mouse up event
+   * @returns {Boolean} If we handled the event
+   */
+  mouseUpCapture: function (event) {
+    var didScroll = this._didTouchScroll;
+
+    this._resetTouchMembers();
+
+    // block other views from handling mouse up if we scrolled, this prevents unexpected side effects of scrolling
+    return didScroll;
+  },
+
+  /**
+   * Resets state after touch scrolling.
+   *
+   * @private
+   */
+  _resetTouchMembers: function () {
+    this._touchStartEvent = null;
+    this._didTouchScroll = false;
+    this._scrollingIsAllowed = false;
+    this._lastTouchDrag = null;
+  },
+
+  /**
+   * Called at the end of a drag, either successful or cancelled. Ensures there are no shine-through problems after a
+   * drag.
+   */
+  cleanupAfterDrag: function () {
+    this._resetTouchMembers();
+  },
 
   // ..........................................................
   // INTERNAL SUPPORT

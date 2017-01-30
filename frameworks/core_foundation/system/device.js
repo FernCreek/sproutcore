@@ -63,24 +63,6 @@ SC.device = SC.Object.create({
   isOffline: NO,
 
   /**
-    Returns a Point containing the last known X and Y coordinates of the
-    mouse, if present.
-
-    @property {Point}
-  */
-  mouseLocation: function() {
-    var responder = SC.RootResponder.responder,
-        lastX = responder._lastMoveX,
-        lastY = responder._lastMoveY;
-
-    if (SC.empty(lastX) || SC.empty(lastY)) {
-      return null;
-    }
-
-    return { x: lastX, y: lastY };
-  }.property(),
-
-  /**
     Initialize the object with some properties up front
   */
   init: function() {
