@@ -93,8 +93,7 @@ SC.MIXED_STATE = '__MIXED__' ;
   @extends SC.ResponderContext
   @since SproutCore 1.0
 */
-SC.Pane = SC.View.extend(SC.ResponderContext,
-/** @scope SC.Pane.prototype */ {
+SC.Pane = SC.View.extend(SC.ResponderContext, /** @scope SC.Pane.prototype */ {
 
   /**
     Returns YES for easy detection of when you reached the pane.
@@ -122,48 +121,89 @@ SC.Pane = SC.View.extend(SC.ResponderContext,
   rootResponder: null,
 
   /**
-    Attempts to send the event down the responder chain for this pane.  If you
-    pass a target, this method will begin with the target and work up the
-    responder chain.  Otherwise, it will begin with the current rr
-    and walk up the chain looking for any responder that implements a handler
-    for the passed method and returns YES when executed.
+   * Attempts to send the passed event through the responder chain for this pane. if you pass
+   * a target then the anchor of the chain will be that view otherwise the anchor will be the
+   * first responder view. The responder chain will be first processed from the top down to
+   * support event capturing then if the event wasn't handled the chain will be processed from
+   * the bottom up as event bubbling. If a view returns true indicating that it handled the
+   * event that view will be returned.
+   *
+   * @param {String} action - The action to send, for capturing it will have "Capture" appended to it
+   * @param {SC.Event} evt - The event object the action is being sent for
+   * @param {SC.View} [target] - Anchor of responder chain, optional
+   * @returns {SC.View|null} The view that handled the event or null if no view did
+   */
+  sendEvent: function (action, evt, target) {
+    var capturingAction = action + 'Capture';
 
-    @param {String} action
-    @param {SC.Event} evt
-    @param {Object} target
-    @returns {Object} object that handled the event
-  */
-  sendEvent: function(action, evt, target) {
-    var handler;
+    // build the responder chain
+    var responderChain = this._buildResponderChain(target);
 
-    // walk up the responder chain looking for a method to handle the event
-    if (!target) target = this.get('firstResponder') ;
-    while(target) {
+    var targetResponder = null;
+    var responder, len, idx;
 
-      if (target.tryToPerform(action, evt)) break;
+    // first send the event via capturing
+    len = responderChain.length;
+    idx = len - 1;
 
-      // even if someone tries to fill in the nextResponder on the pane, stop
-      // searching when we hit the pane.
-      target = (target === this) ? null : target.get('nextResponder') ;
+    while (!targetResponder && idx >= 0) {
+      responder = responderChain[idx];
+      targetResponder = responder.tryToPerform(capturingAction, evt) ? responder : null;
+      --idx;
     }
 
-    // if no handler was found in the responder chain, try the default
-    if (!target && (target = this.get('defaultResponder'))) {
-      if (typeof target === SC.T_STRING) {
-        target = SC.objectForPropertyPath(target);
+    // if no one captured, send the event via bubbling
+    idx = 0;
+    while (!targetResponder && idx < len) {
+      responder = responderChain[idx];
+      targetResponder = responder.tryToPerform(action, evt) ? responder : null;
+      ++idx;
+    }
+
+    return targetResponder;
+  },
+
+  /**
+   * Builds the responder chain for this pane. If startingResponder is passed then it will be the anchor, or starting
+   * point, of the chain. If it is null then the firstResponder will be used. Both the defaultResponder and this pane
+   * will be added to the chain at the end in that order.
+   *
+   * @param {SC.View} [startingResponder] - Anchor of the responder chain, optional
+   * @returns {SC.View[]} The chain of responders
+   * @private
+   */
+  _buildResponderChain: function (startingResponder) {
+    var responder = startingResponder;
+    var responderChain = [];
+
+    // if we weren't given a starting place, start with the first responder
+    if (!responder) {
+      responder = this.get('firstResponder');
+    }
+
+    // build the chain out from the starting responder
+    if (responder) {
+      while (responder && responder !== this) {
+        responderChain.push(responder);
+        responder = responder.get('nextResponder');
       }
-
-      if (!target) target = null;
-      else target = target.tryToPerform(action, evt) ? target : null ;
     }
 
-    // if we don't have a default responder or no responders in the responder
-    // chain handled the event, see if the pane itself implements the event
-    else if (!target && !(target = this.get('defaultResponder'))) {
-      target = this.tryToPerform(action, evt) ? this : null ;
+    // add the default responder if there is one
+    responder = this.get('defaultResponder');
+
+    if (SC.typeOf(responder) === SC.T_STRING) {
+      responder = SC.objectForPropertyPath(responder);
     }
 
-    return evt.mouseHandler || target ;
+    if (responder) {
+      responderChain.push(responder);
+    }
+
+    // add the pane
+    responderChain.push(this);
+
+    return responderChain;
   },
 
   // .......................................................
