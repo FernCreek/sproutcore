@@ -557,11 +557,11 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     Finds the view that appears to be targeted by the passed event.  This only
     works on events with a valid target property.
 
-    @param {SC.Event} evt
+    @param {SC.Event} evt - The event to check
     @returns {SC.View} view instance or null
   */
-  targetViewForEvent: function(evt) {
-    return evt.target ? SC.$(evt.target).view()[0] : null ;
+  targetViewForEvent: function (evt) {
+    return evt ? evt.getTargetView() : null;
   },
 
   /**
@@ -736,6 +736,12 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         // is doing something destructive as part of touchstart or mousedown then not getting touchend or mouseup is on
         // their own heads.
         this._activeTouch = null;
+
+        // if we are in this state and there was an active drag we need to cancel it
+        if (this._drag) {
+          this._drag.cancelDrag();
+          this._drag = null;
+        }
       }
     }
 
@@ -761,8 +767,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         touchStartEvent: event
       };
 
-      event.touchStartEvent = event;
-
       view = this.sendEvent('touchStart', event, view);
 
       this._activeTouch.touchStartView = view;
@@ -772,8 +776,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         event.convertTouchEventToMouseEvent();
         this.mousedown(event);
       }
-
-      // TODO_JA - Also implement _mouseCanDrag behavior?
     }
     // else this start was part of a multi-touch which isn't supported
 
@@ -807,7 +809,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         view = this.targetViewForEvent(event);
 
         event.copyTouchProperties(touch);
-        event.touchStartEvent = this._activeTouch.touchStartEvent;
 
         if (!view || !this.sendEvent('touchesDragged', event, view)) {
           // no one handled the touch, try sending it as a mouse event
@@ -847,13 +848,12 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         view = this._activeTouch.touchStartView;
 
         event.copyTouchProperties(touch);
-        event.touchStartEvent = this._activeTouch.touchStartEvent;
 
         if (view) {
           // View handled touchStart so it must handle touchEnd
           this.sendEvent('touchEnd', event, view);
         } else {
-          event.convertTouchEventToMouseEvent();
+          event.convertTouchEventToMouseEvent(); // TODO_JA - this can lead to an invalid target if the end occurred off the browser
           this.mouseup(event);
         }
 
@@ -913,7 +913,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
         pointerId: pointerEvent.pointerId,
         pointerDownEvent: event
       };
-      event.touchStartEvent = event;
 
       view = this.sendEvent('touchStart', event, view);
 
@@ -955,9 +954,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
 
       view = this.targetViewForEvent(event);
 
-      // Retain compatibility with touch events
-      event.touchStartEvent = this._activePointer.pointerDownEvent;
-
       if (!view || !this.sendEvent('touchesDragged', event, view)) {
         // no one handled the touch, try sending it as a mouse event
         this.mousemove(event);
@@ -981,11 +977,8 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
 
     if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
 
-
+      // TODO_JA - what is the target if this occurred off of the browser? Same problems as touch events?
       view = this._activePointer.pointerDownView;
-
-      // Retain compatibility with touch events
-      event.touchStartEvent = this._activePointer.pointerDownEvent;
 
       if (view) {
         // View handled touchStart so it must handle touchEnd
