@@ -1257,6 +1257,48 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     } else return NO;
   },
 
+    /**
+     * For text areas eat touch events to support browser scrolling over SproutCore scrolling
+     *
+     * @param {SC.Event} event - The event
+     * @returns {Boolean} If we handled the event
+     */
+    touchStart: function (event) {
+      var multiLine = this.get('isTextArea');
+      if (multiLine) {
+        event.allowCompatibilityEvents();
+      }
+      return multiLine;
+    },
+
+    /**
+     * For text areas eat touch events to support browser scrolling over SproutCore scrolling
+     *
+     * @param {SC.Event} event - The event
+     * @returns {Boolean} If we handled the event
+     */
+    touchesDragged: function (event) {
+      var multiLine = this.get('isTextArea');
+      if (multiLine) {
+        event.allowCompatibilityEvents();
+      }
+      return multiLine;
+    },
+
+    /**
+     * For text areas eat touch events to support browser scrolling over SproutCore scrolling
+     *
+     * @param {SC.Event} event - The event
+     * @returns {Boolean} If we handled the event
+     */
+    touchEnd: function (event) {
+      var multiLine = this.get('isTextArea');
+      if (multiLine) {
+        event.allowCompatibilityEvents();
+      }
+      return multiLine;
+    },
+
   /**
     Allows text selection in IE. We block the IE only event selectStart to
     block text selection in all other views.
