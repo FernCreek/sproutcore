@@ -1,7 +1,7 @@
 CHANGE LOG
 ==========
 
-Seapine SproutCore 1.9.0.33 (August 22, 2016)
+Seapine SproutCore 1.9.0.34 (February 3, 2017)
 ----------
 * Cherry-picked. Handlebar escaping issue with ampersands (367e59191a).
 * Cherry-picked. Changed to using 'set()' for cacheable property so internal value is recomputed (c20d17517d).
@@ -210,6 +210,7 @@ Seapine SproutCore 1.9.0.33 (August 22, 2016)
 * Updating tests to match escape html render context changes (ae28c7a)
 * Fixing an issue in addStyleSafe where it was not returning the current context (5279d96)
 * Adding unit tests for addStyleSafe (4c55f9a)
+* Replaced SproutCore's touch handling (6a23c95)
 
 1.9.0
 ----------
