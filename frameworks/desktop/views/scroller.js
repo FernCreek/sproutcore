@@ -78,11 +78,6 @@ SC.ScrollerView = SC.View.extend(/** @scope SC.ScrollerView.prototype */ {
    */
   touchScrollingEnabled: false,
 
-  /** @private
-    The in-touch-scroll value.
-  */
-  _touchScrollValue: NO, // TODO_JA - remove?
-
   /**
     The value of the scroller.
 
@@ -108,11 +103,8 @@ SC.ScrollerView = SC.View.extend(/** @scope SC.ScrollerView.prototype */ {
     @observes value
   */
   displayValue: function() {
-    var ret;
-    if (this.get("_touchScrollValue")) ret = this.get("_touchScrollValue");
-    else ret = this.get("value");
-    return ret;
-  }.property("value", "_touchScrollValue").cacheable(),
+    return this.get("value");
+  }.property("value").cacheable(),
 
   /**
     The portion of the track that the thumb should fill. Usually the
@@ -353,22 +345,6 @@ SC.ScrollerView = SC.View.extend(/** @scope SC.ScrollerView.prototype */ {
     } else {
       context.push('<div class="endcap"></div>');
     }
-  },
-
-    // TODO_JA - remove these?
-  /** @private */
-  touchScrollDidStart: function(value) {
-    this.set("_touchScrollValue", value);
-  },
-
-  /** @private */
-  touchScrollDidEnd: function(value) {
-    this.set("_touchScrollValue", NO);
-  },
-
-  /** @private */
-  touchScrollDidChange: function(value) {
-    this.set("_touchScrollValue", value);
   },
 
   // ..........................................................
