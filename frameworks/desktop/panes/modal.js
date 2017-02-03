@@ -117,10 +117,5 @@ SC.ModalPane = SC.Pane.extend(
   mouseDown: function(evt) {
     var owner = this.get('owner');
     if (owner && owner.modalPaneDidClick) owner.modalPaneDidClick(evt);
-  },
-
-  /** @private */
-  touchStart: function(evt) {
-    this.mouseDown(evt);
   }
 });

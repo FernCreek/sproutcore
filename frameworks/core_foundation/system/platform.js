@@ -36,32 +36,6 @@ SC.platform = SC.Object.create({
 
   }.property().cacheable(),
 
-
-  /*
-    NOTES
-     - Chrome would incorrectly indicate support for touch events.  This has been fixed:
-       http://code.google.com/p/chromium/issues/detail?id=36415
-     - Android is assumed to support touch, but incorrectly reports that it does not.
-     - See: https://github.com/Modernizr/Modernizr/issues/84 for a discussion on detecting
-       touch capability.
-  */
-  /**
-    YES if the current device supports touch events, NO otherwise.
-
-    You can simulate touch events in environments that don't support them by
-    calling SC.platform.simulateTouchEvents() from your browser's console.
-
-    @property {Boolean}
-  */
-  touch: 'ontouchstart' in window || SC.browser.name === SC.BROWSER.android,
-
-  /**
-    YES if the current browser supports bounce on scroll.
-
-    @property {Boolean}
-  */
-  bounceOnScroll: SC.browser.os === SC.OS.ios,
-
   /**
     YES if the current browser supports pinch to zoom.
 
@@ -120,190 +94,6 @@ SC.platform = SC.Object.create({
   domCSSPrefix: null,
 
   /**
-    Call this method to swap out the default mouse handlers with proxy methods
-    that will translate mouse events to touch events.
-
-    This is useful if you are debugging touch functionality on the desktop.
-  */
-  simulateTouchEvents: function() {
-    // Touch events are supported natively, no need for this.
-    if (this.touch) {
-      // @if (debug)
-      SC.Logger.info("Can't simulate touch events in an environment that supports them.");
-      // @endif
-      return;
-    }
-
-    SC.Logger.log("Simulating touch events");
-
-    // Tell the app that we now "speak" touch
-    SC.platform.touch = YES;
-    SC.platform.bounceOnScroll = YES;
-
-    // CSS selectors may depend on the touch class name being present
-    document.body.className = document.body.className + ' touch';
-
-    // Initialize a counter, which we will use to generate unique ids for each
-    // fake touch.
-    this._simtouch_counter = 1;
-
-    // Remove events that don't exist in touch environments
-    this.removeEvents(['click', 'dblclick', 'mouseout', 'mouseover', 'mousewheel']);
-
-    // Replace mouse events with our translation methods
-    this.replaceEvent('mousemove', this._simtouch_mousemove);
-    this.replaceEvent('mousedown', this._simtouch_mousedown);
-    this.replaceEvent('mouseup', this._simtouch_mouseup);
-
-    // fix orientation handling
-    SC.platform.windowSizeDeterminesOrientation = YES;
-    SC.device.orientationHandlingShouldChange();
-  },
-
-  /** @private
-    Removes event listeners from the document.
-
-    @param {Array} events Array of strings representing the events to remove
-  */
-  removeEvents: function(events) {
-    var idx, len = events.length, key;
-    for (idx = 0; idx < len; idx++) {
-      key = events[idx];
-      SC.Event.remove(document, key, SC.RootResponder.responder, SC.RootResponder.responder[key]);
-    }
-  },
-
-  /** @private
-    Replaces an event listener with another.
-
-    @param {String} evt The event to replace
-    @param {Function} replacement The method that should be called instead
-  */
-  replaceEvent: function(evt, replacement) {
-    SC.Event.remove(document, evt, SC.RootResponder.responder, SC.RootResponder.responder[evt]);
-    SC.Event.add(document, evt, this, replacement);
-  },
-
-  /** @private
-    When simulating touch events, this method is called when mousemove events
-    are received.
-
-    If the altKey is depressed and pinch center not yet established, we will capture the mouse position.
-  */
-  _simtouch_mousemove: function(evt) {
-    if (!this._mousedown) {
-      /*
-        we need to capture when was the first spot that the altKey was pressed and use it as
-        the center point of a pinch
-       */
-      if(evt.altKey && this._pinchCenter === null) {
-        this._pinchCenter = {
-          pageX: evt.pageX,
-          pageY: evt.pageY,
-          screenX: evt.screenX,
-          screenY: evt.screenY,
-          clientX: evt.clientX,
-          clientY: evt.clientY
-        };
-      } else if(!evt.altKey && this._pinchCenter !== null){
-        this._pinchCenter = null;
-      }
-      return NO;
-    }
-
-    var manufacturedEvt = this.manufactureTouchEvent(evt, 'touchmove');
-    return SC.RootResponder.responder.touchmove(manufacturedEvt);
-  },
-
-  /** @private
-    When simulating touch events, this method is called when mousedown events
-    are received.
-  */
-  _simtouch_mousedown: function(evt) {
-    this._mousedown = YES;
-
-    var manufacturedEvt = this.manufactureTouchEvent(evt, 'touchstart');
-    return SC.RootResponder.responder.touchstart(manufacturedEvt);
-  },
-
-  /** @private
-    When simulating touch events, this method is called when mouseup events
-    are received.
-  */
-  _simtouch_mouseup: function(evt) {
-    var manufacturedEvt = this.manufactureTouchEvent(evt, 'touchend'),
-        ret = SC.RootResponder.responder.touchend(manufacturedEvt);
-
-    this._mousedown = NO;
-    this._simtouch_counter++;
-    return ret;
-  },
-
-  /** @private
-    Converts a mouse-style event to a touch-style event.
-
-    Note that this method edits the passed event in place, and returns
-    that same instance instead of a new, modified version.
-
-    If altKey is depressed and we have previously captured a position for the center of
-    the pivot point for the virtual second touch, we will manufacture an additional touch.
-    The position of the virtual touch will be the reflection of the mouse position,
-    relative to the pinch center.
-
-    @param {Event} evt the mouse event to modify
-    @param {String} type the type of event (e.g., touchstart)
-    @returns {Event} the mouse event with an added changedTouches array
-  */
-  manufactureTouchEvent: function(evt, type) {
-    var realTouch, virtualTouch, realTouchIdentifier = this._simtouch_counter;
-
-    realTouch = {
-      type: type,
-      target: evt.target,
-      identifier: realTouchIdentifier,
-      pageX: evt.pageX,
-      pageY: evt.pageY,
-      screenX: evt.screenX,
-      screenY: evt.screenY,
-      clientX: evt.clientX,
-      clientY: evt.clientY
-    };
-    evt.touches = [ realTouch ];
-
-    /*
-      simulate pinch gesture
-     */
-    if(evt.altKey && this._pinchCenter !== null)
-    {
-      //calculate the mirror position of the virtual touch
-      var pageX = this._pinchCenter.pageX + this._pinchCenter.pageX - evt.pageX ,
-          pageY = this._pinchCenter.pageY + this._pinchCenter.pageY - evt.pageY,
-          screenX = this._pinchCenter.screenX + this._pinchCenter.screenX - evt.screenX,
-          screenY = this._pinchCenter.screenY + this._pinchCenter.screenY - evt.screenY,
-          clientX = this._pinchCenter.clientX + this._pinchCenter.clientX - evt.clientX,
-          clientY = this._pinchCenter.clientY + this._pinchCenter.clientY - evt.clientY,
-          virtualTouchIdentifier = this._simtouch_counter + 1;
-
-      virtualTouch = {
-        type: type,
-        target: evt.target,
-        identifier: virtualTouchIdentifier,
-        pageX: pageX,
-        pageY: pageY,
-        screenX: screenX,
-        screenY: screenY,
-        clientX: clientX,
-        clientY: clientY
-      };
-
-      evt.touches = [ realTouch , virtualTouch];
-    }
-    evt.changedTouches = evt.touches;
-
-    return evt;
-  },
-
-  /**
     Whether the browser supports CSS transitions. Calculated later.
   */
   supportsCSSTransitions: NO,
@@ -356,15 +146,24 @@ SC.platform = SC.Object.create({
 
   /**
     Because iOS is slow to dispatch the window.onorientationchange event,
-    we use the window size to determine the orientation on iOS devices
-    and desktop environments when SC.platform.touch is YES (ie. when
-    SC.platform.simulateTouchEvents has been called)
+    we use the window size to determine the orientation on iOS devices.
 
     @property {Boolean}
     @default NO
   */
-  windowSizeDeterminesOrientation: SC.browser.os === SC.OS.ios || !('onorientationchange' in window)
+  windowSizeDeterminesOrientation: SC.browser.os === SC.OS.ios || !('onorientationchange' in window),
 
+  /**
+   * If PointerEvents are supported.
+   * @property {Boolean}
+   */
+  supportsPointerEvents: !!window.PointerEvent,
+
+  /**
+   * If Touch Events are supported
+   * @property {Boolean}
+   */
+  supportsTouchEvents: !!window.TouchEvent
 });
 
 /* Calculate CSS Prefixes */

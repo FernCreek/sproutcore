@@ -20,11 +20,11 @@ SC.BaseTheme.masterDetailRenderDelegate = SC.RenderDelegate.create({
   dividerWidth: 1,
   
   render: function(dataSource, context) {
-    context.setClass('round-toolbars', SC.platform.touch);
+
   },
   
   update: function(dataSource, jquery) {
-    jquery.setClass('round-toolbars', SC.platform.touch);    
+
   }
   
 });

@@ -5,7 +5,7 @@
 // License:   Licensed under MIT license (see license.js)
 // ==========================================================================
 
-sc_require('system/core_query') ;
+sc_require('system/core_query');
 
 /**
   The event class provides a simple cross-platform library for capturing and
@@ -76,6 +76,9 @@ SC.Event = function(originalEvent) {
   if (!this.which && this.button) {
     this.which = ((this.button & 1) ? 1 : ((this.button & 2) ? 3 : ( (this.button & 4) ? 2 : 0 ) ));
   }
+
+  this._isPointerEvent = SC.platform.supportsPointerEvents && originalEvent instanceof window.PointerEvent;
+  this._isTouchEvent = SC.platform.supportsTouchEvents && originalEvent instanceof window.TouchEvent;
 
   // Normalize wheel delta values for mousewheel events
   if (this.type === 'mousewheel' || this.type === 'DOMMouseScroll' || this.type === 'MozMousePixelScroll') {
@@ -811,38 +814,6 @@ SC.Event.prototype = {
   hasCustomEventHandling: NO,
 
   /**
-    Returns the touches owned by the supplied view.
-
-    @param {SC.View}
-    @returns {Array} touches an array of SC.Touch objects
-  */
-  touchesForView: function(view) {
-    if (this.touchContext) return this.touchContext.touchesForView(view);
-  },
-
-  /**
-    Same as touchesForView, but sounds better for responders.
-
-    @param {SC.RootResponder}
-    @returns {Array} touches an array of SC.Touch objects
-  */
-  touchesForResponder: function(responder) {
-    if (this.touchContext) return this.touchContext.touchesForView(responder);
-  },
-
-  /**
-    Returns average data--x, y, and d (distance)--for the touches owned by the
-    supplied view.
-
-    @param {SC.View}
-    @returns {Array} touches an array of SC.Touch objects
-  */
-  averagedTouchesForView: function(view) {
-    if (this.touchContext) return this.touchContext.averagedTouchesForView(view);
-    return null;
-  },
-
-  /**
     Indicates that you want to allow the normal default behavior.  Sets
     the hasCustomEventHandling property to YES but does not cancel the event.
 
@@ -970,9 +941,81 @@ SC.Event.prototype = {
 
     if (ret) ret = modifiers + ret ;
     return [ret, key] ;
-  }
+  },
 
-} ;
+  /**
+   * Gets the target view for this event
+   * @returns {SC.View|null} The event target view or null if there isn't one
+   */
+  getTargetView: function () {
+    return this.target ? SC.$(this.target).view()[0] : null;
+  },
+
+  /**
+   * If this is a touch event.
+   * @type {Boolean}
+   * @private
+   */
+  _isTouchEvent: false,
+
+  /**
+   * If this is a pointer event.
+   * @type {Boolean}
+   * @private
+   */
+  _isPointerEvent: false,
+
+  /**
+   * If this event is a touch event or a pointer event of type touch.
+   *
+   * @returns {Boolean} See description
+   */
+  isTouchEvent: function () {
+    return this._isTouchEvent || (this._isPointerEvent && this.originalEvent.pointerType === 'touch');
+  },
+
+  /**
+   * Copies members from the passed touch to this event so this event is similar to a mouse event. The properties copied
+   * are the standard mouse X & Y coordinate properties.
+   * @param {Touch} touch - The browser touch object to copy properties from
+   */
+  copyTouchProperties: function (touch) {
+    if (this._isTouchEvent && touch) {
+      this.clientX = touch.clientX;
+      this.clientY = touch.clientY;
+      this.pageX = touch.pageX;
+      this.pageY = touch.pageY;
+      this.screenX = touch.screenX;
+      this.screenY = touch.screenY;
+    }
+  },
+
+  /**
+   * Converts this touch event to a mouse event so it has the same expected members as a mouse event.
+   */
+  convertTouchEventToMouseEvent: function () {
+    if (this._isTouchEvent) {
+      // Touches for touchmove & touchend events have their target as the touchstart's target element, which is wrong for
+      // mouse events
+      this.target = document.elementFromPoint(this.pageX, this.pageY);
+    }
+  },
+
+  /**
+   * For touch & pointer events this tracks if the browser compatibility mouse events should be generated.
+   * @type {Boolean}
+   */
+  sendCompatibilityEvents: false,
+
+  /**
+   * Indicates that we should let the browser generate compatibility mouse events for this event.
+   */
+  allowCompatibilityEvents: function () {
+    if (this.isTouchEvent()) {
+      this.sendCompatibilityEvents = true;
+    }
+  }
+};
 
 // Also provide a Prototype-like API so that people can use either one.
 

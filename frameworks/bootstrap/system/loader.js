@@ -49,10 +49,6 @@ SC.setupBodyClassNames = function() {
   }
 
   if(browser==="safari" || browser==="chrome") classNames.push('webkit');
-  if (SC.browser.isMobileSafari) classNames.push('mobile-safari') ;
-  if ('createTouch' in document) classNames.push('touch');
-  el.className = classNames.join(' ') ;
-} ;
-
-
-
+  if (SC.browser.isMobileSafari) classNames.push('mobile-safari');
+  el.className = classNames.join(' ');
+};

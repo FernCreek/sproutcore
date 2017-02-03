@@ -95,7 +95,7 @@ SC.WorkspaceView = SC.View.extend(
     if (!this.get("autoResizeToolbars")) return this.get("defaultToolbarSize");
     if (this.get("orientation") === SC.HORIZONTAL_ORIENTATION) return this.get("smallToolbarSize");
     return this.get("largeToolbarSize");
-  }.property("autoHideMaster", "orientation"),
+  }.property("orientation"),
   
   /**
     Tracks the orientation of the view. Possible values:

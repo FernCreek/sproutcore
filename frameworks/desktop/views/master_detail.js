@@ -86,23 +86,6 @@ SC.MasterDetailView = SC.View.extend(
   }),
   
   /**
-    Whether to automatically hide the master panel in portrait orientation. 
-    
-    By default, this property is a computed property based on whether the browser is a touch
-    browser. Your purpose in overriding it is either to disable it from automatically
-    disappearing on iPad and other touch devices, or force it to appear when a desktop
-    browser changes.
-    
-    @field
-    @type Boolean
-    @default NO
-  */
-  autoHideMaster: function() {
-    if (SC.platform.touch) return YES;
-    return NO;
-  }.property().cacheable(),
-  
-  /**
     The width of the 'master' side of the master/detail view.
 
     @type Number
@@ -124,14 +107,12 @@ SC.MasterDetailView = SC.View.extend(
     @field
     @type Boolean
     @default NO
-    @observes autoHideMaster
     @observes orientation
   */
   masterIsHidden: function() {
-    if (!this.get("autoHideMaster")) return NO;
     if (this.get("orientation") === SC.HORIZONTAL_ORIENTATION) return NO;
     return YES;
-  }.property("autoHideMaster", "orientation"),
+  }.property("orientation"),
   
   /**
     Tracks the orientation of the view. Possible values:

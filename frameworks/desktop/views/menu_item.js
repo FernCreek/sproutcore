@@ -585,16 +585,6 @@ SC.MenuItemView = SC.View.extend(SC.ContentDisplay,
   },
 
   /** @private */
-  touchEntered: function(evt){
-    return this.mouseEntered(evt);
-  },
-
-  /** @private */
-  touchExited: function(evt){
-    return this.mouseExited(evt);
-  },
-
-  /** @private */
   checkMouseLocation: function() {
     var subMenu = this.get('subMenu'), parentMenu = this.get('parentMenu'),
         currentMenuItem, previousMenuItem;

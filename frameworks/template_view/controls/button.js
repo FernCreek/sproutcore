@@ -46,14 +46,6 @@ SC.Button = SC.TemplateView.extend(SC.ActionSupport,
     this._isMouseDown = NO;
   },
 
-  touchStart: function(touch) {
-    this.mouseDown(touch);
-  },
-
-  touchEnd: function(touch) {
-    this.mouseUp(touch);
-  },
-
   keyDown: function(evt) {
     var ret = NO,
         view;

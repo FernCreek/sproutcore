@@ -34,19 +34,7 @@ SC.TemplatePane.mixin( /** @scope SC.TemplatePane */ {
     var pane = SC.MainPane.extend({
       childViews: ['contentView'],
 
-      contentView: SC.TemplateView.design(attrs),
-
-      touchStart: function(touch) {
-        touch.allowDefault();
-      },
-
-      touchesDragged: function(evt, touches) {
-        evt.allowDefault();
-      },
-
-      touchEnd: function(touch) {
-        touch.allowDefault();
-      }
+      contentView: SC.TemplateView.design(attrs)
     });
 
     pane = pane.create().append();

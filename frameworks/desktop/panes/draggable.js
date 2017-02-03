@@ -26,6 +26,9 @@ SC.Draggable = /** @scope SC.Draggable.prototype */{
   */
   isAnchored: NO,
 
+  classNames: ['sc-draggable'],
+  classNameBindings: ['isAnchored'],
+
   /** @private */
   _drag_cachedMouseX: null,
 
@@ -33,7 +36,7 @@ SC.Draggable = /** @scope SC.Draggable.prototype */{
   _drag_cachedMouseY: null,
 
   /**
-   To provide drag functionality enhance mouseDown, mouseDragged, touchStart, and touchesDragged if they exist.
+   To provide drag functionality enhance mouseDown and mouseDragged if they exist.
    */
   initMixin: function() {
     if (this.mouseDown) {
@@ -52,24 +55,6 @@ SC.Draggable = /** @scope SC.Draggable.prototype */{
       });
     } else {
       this.mouseDragged = this._drag_mouseDragged;
-    }
-
-    if (this.touchStart) {
-      this.touchStart = SC._enhance(this.touchStart, function(original, evt) {
-        var ret = this._drag_touchStart(evt);
-        return original(evt) || ret;
-      });
-    } else {
-      this.touchStart = this._drag_touchStart;
-    }
-
-    if (this.touchesDragged) {
-      this.touchesDragged = SC._enhance(this.touchesDragged, function(original, evt) {
-        var ret = this._drag_touchesDragged(evt);
-        return original(evt) || ret;
-      });
-    } else {
-      this.touchesDragged = this._drag_touchesDragged;
     }
   },
 
@@ -181,19 +166,5 @@ SC.Draggable = /** @scope SC.Draggable.prototype */{
     this.adjust(layout);
 
     return YES;
-  },
-
-  /**
-    Forward to our mouseDown handler.
-  */
-  _drag_touchStart: function(evt) {
-    return this._drag_mouseDown(evt);
-  },
-
-  /**
-    Forward to our mouseDragged handler.
-  */
-  _drag_touchesDragged: function(evt) {
-    return this._drag_mouseDragged(evt);
   }
 };

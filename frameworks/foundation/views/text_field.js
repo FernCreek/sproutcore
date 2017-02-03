@@ -975,36 +975,12 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     this.becomeFirstResponder(evt);
 
     this.beginEditing(evt);
-
-    // We have to hide the intercept pane, as it blocks the events.
-    // However, show any that we previously hid, first just in case something wacky happened.
-    if (this._didHideInterceptForPane) {
-      this._didHideInterceptForPane.showTouchIntercept();
-      this._didHideInterceptForPane = null;
-    }
-
-    // now, hide the intercept on this pane if it has one
-    var pane = this.get('pane');
-    if (pane && pane.get('hasTouchIntercept')) {
-      // hide
-      pane.hideTouchIntercept();
-
-      // and set our internal one so we can unhide it (even if the pane somehow changes)
-      this._didHideInterceptForPane = this.get("pane");
-    }
   },
 
   fieldDidBlur: function (evt) {
     this.resignFirstResponder(evt) ;
 
     if (this.get('commitOnBlur')) this.commitEditing(evt);
-
-    // get the pane we hid intercept pane for (if any)
-    var touchPane = this._didHideInterceptForPane;
-    if (touchPane) {
-      touchPane.showTouchIntercept();
-      touchPane = null;
-    }
   },
 
   /** @private */
@@ -1162,16 +1138,15 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     if (!SC.platform.input.maxlength && this.get('isTextArea')) {
       var val = this.get('value');
 
-      // This code is nasty. It's thanks gecko .keycode table that has charters like & with the same keycode as up arrow key
+      // This code is nasty. It's thanks to Gecko .keycode table that has characters like '&' with the same keycode as up arrow key
       if (val && ((!SC.browser.isMozilla && which>47) ||
                   (SC.browser.isMozilla && ((which>32 && which<43) || which>47) && !(keyCode>36 && keyCode<41))) &&
           (val.length >= this.get('maxLength'))) {
         maxLengthReached = true;
       }
     }
-    // validate keyDown...
-    // do not validate on touch, as it prevents return.
-    if ((this.performValidateKeyDown(evt) || SC.platform.touch) && !maxLengthReached) {
+    // Validate keyDown...
+    if (this.performValidateKeyDown(evt) && !maxLengthReached) {
       evt.allowDefault();
     } else {
       evt.stop();
@@ -1272,14 +1247,6 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     return sc_super();
   },
 
-  touchStart: function (evt) {
-    return this.mouseDown(evt);
-  },
-
-  touchEnd: function (evt) {
-    return this.mouseUp(evt);
-  },
-
   /**
     Adds mouse wheel support for textareas.
    */
@@ -1289,6 +1256,48 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
       return YES;
     } else return NO;
   },
+
+    /**
+     * For text areas eat touch events to support browser scrolling over SproutCore scrolling
+     *
+     * @param {SC.Event} event - The event
+     * @returns {Boolean} If we handled the event
+     */
+    touchStart: function (event) {
+      var multiLine = this.get('isTextArea');
+      if (multiLine) {
+        event.allowCompatibilityEvents();
+      }
+      return multiLine;
+    },
+
+    /**
+     * For text areas eat touch events to support browser scrolling over SproutCore scrolling
+     *
+     * @param {SC.Event} event - The event
+     * @returns {Boolean} If we handled the event
+     */
+    touchesDragged: function (event) {
+      var multiLine = this.get('isTextArea');
+      if (multiLine) {
+        event.allowCompatibilityEvents();
+      }
+      return multiLine;
+    },
+
+    /**
+     * For text areas eat touch events to support browser scrolling over SproutCore scrolling
+     *
+     * @param {SC.Event} event - The event
+     * @returns {Boolean} If we handled the event
+     */
+    touchEnd: function (event) {
+      var multiLine = this.get('isTextArea');
+      if (multiLine) {
+        event.allowCompatibilityEvents();
+      }
+      return multiLine;
+    },
 
   /**
     Allows text selection in IE. We block the IE only event selectStart to

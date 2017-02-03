@@ -129,18 +129,6 @@ SC.StaticContentView = SC.View.extend(SC.StaticLayout,
     var content = this.get('content');
 
     context.push(content || '');
-  },
-
-  /** @private */
-  touchStart: function(evt){
-    evt.allowDefault();
-    return YES;
-  },
-
-  /** @private */
-  touchEnd: function(evt){
-    evt.allowDefault();
-    return YES;
   }
 
 });

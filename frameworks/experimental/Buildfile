@@ -12,5 +12,3 @@ config :greenhouse,
   :css_theme => 'ace.greenhouse'
 
 config :polymorphism, :required => :datastore
-
-config :split_view, :required => :foundation

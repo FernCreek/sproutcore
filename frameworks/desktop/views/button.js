@@ -679,55 +679,6 @@ SC.ButtonView = SC.View.extend(SC.Control,
   },
 
   /** @private */
-  touchStart: function(touch){
-    var buttonBehavior = this.get('buttonBehavior');
-
-    if (!this.get('isEnabled')) return YES ; // handled event, but do nothing
-    this.set('isActive', YES);
-
-    if (buttonBehavior === SC.HOLD_BEHAVIOR) {
-      this._action(touch);
-    } else if (!this._isFocused && (buttonBehavior!==SC.PUSH_BEHAVIOR)) {
-      this._isFocused = YES ;
-      this.becomeFirstResponder(touch);
-    }
-
-    // don't want to do whatever default is...
-    touch.preventDefault();
-
-    return YES;
-  },
-
-  /** @private */
-  touchesDragged: function(evt, touches) {
-    if (!this.touchIsInBoundary(evt)) {
-      if (!this._touch_exited) this.set('isActive', NO);
-      this._touch_exited = YES;
-    } else {
-      if (this._touch_exited) this.set('isActive', YES);
-      this._touch_exited = NO;
-    }
-
-    evt.preventDefault();
-    return YES;
-  },
-
-  /** @private */
-  touchEnd: function(touch){
-    this._touch_exited = NO;
-    this.set('isActive', NO); // track independently in case isEnabled has changed
-
-    if (this.get('buttonBehavior') !== SC.HOLD_BEHAVIOR) {
-      if (this.touchIsInBoundary(touch) && this.get('isEnabled')) {
-        this._action();
-      }
-    }
-
-    touch.preventDefault();
-    return YES ;
-  },
-
-  /** @private */
   keyDown: function(evt) {
     // handle tab key
      if(!this.get('isEnabled')) return YES;

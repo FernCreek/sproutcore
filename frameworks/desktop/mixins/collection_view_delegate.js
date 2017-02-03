@@ -143,24 +143,26 @@ SC.CollectionViewDelegate = {
 
   // ..........................................................
   // DRAGGING
-  // 
-  
+  //
+
   /**
-    Called by the collection view just before it starts a drag to give you
-    an opportunity to decide if the drag should be allowed.
-    
-    You can use this method to implement fine-grained control over when a
-    drag will be allowed and when it will not be allowed. For example, you
-    may enable content reordering but then implement this method to prevent
-    reordering of certain items in the view.
-    
-    The default implementation always returns `YES`.
-    
-    @param {SC.CollectionView} view the collection view
-    @returns {Boolean} YES to allow, NO to prevent it
-  */
-  collectionViewShouldBeginDrag: function(view) {
-    return YES;
+   * Called by the collection view just before it starts a drag to give you
+   * an opportunity to decide if the drag should be allowed.
+   *
+   * You can use this method to implement fine-grained control over when a
+   * drag will be allowed and when it will not be allowed. For example, you
+   * may enable content reordering but then implement this method to prevent
+   * reordering of certain items in the view.
+   *
+   * The default implementation always returns true.
+   *
+   * @param {SC.CollectionView} collectionView - The collection view attempting the drag
+   * @param {SC.IndexSet} dragIndices - The set of indices to drag
+   * @param {SC.Event} dragEvent - The event that triggered the drag
+   * @returns {Boolean} - If the collection view should do the drag
+   */
+  collectionViewShouldBeginDrag: function (collectionView, dragIndices, dragEvent) {
+    return true;
   },
 
   /**

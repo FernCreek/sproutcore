@@ -151,18 +151,6 @@ SC.SliderView = SC.View.extend(SC.Control,
     return YES ;  
   },
   
-  touchStart: function(evt){
-    return this.mouseDown(evt);
-  },
-  
-  touchEnd: function(evt){
-    return this.mouseUp(evt);
-  },
-  
-  touchesDragged: function(evt){
-    return this.mouseDragged(evt);
-  },
-  
   /** @private
     Updates the handle based on the mouse location of the handle in the
     event.
