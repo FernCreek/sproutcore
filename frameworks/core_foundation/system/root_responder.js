@@ -803,18 +803,26 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
       }
 
       if (handleTouchMove) {
-        // For touchmove the target of the touch is always the same as the touchstart target, so the view should be the
-        // same, but if if the touchStart event wasn't handled we have no touchStartView on the active touch and we
-        // still need to send touchesDragged events to support touch scrolling and touch dragging
-        view = this.targetViewForEvent(event);
+        SC.run(function () {
+          event.copyTouchProperties(touch);
 
-        event.copyTouchProperties(touch);
+          // if we are dragging send events to the drag, it only has mouse handlers
+          if (this._drag) {
+            event.convertTouchEventToMouseEvent();
+            this._drag.tryToPerform('mouseDragged', event);
+          } else {
+            // For touchmove the target of the touch is always the same as the touchstart target, so the view should be the
+            // same, but if if the touchStart event wasn't handled we have no touchStartView on the active touch and we
+            // still need to send touchesDragged events to support touch scrolling and touch dragging
+            view = this.targetViewForEvent(event);
 
-        if (!view || !this.sendEvent('touchesDragged', event, view)) {
-          // no one handled the touch, try sending it as a mouse event
-          event.convertTouchEventToMouseEvent();
-          this.mousemove(event);
-        }
+            if (!view || !this.sendEvent('touchesDragged', event, view)) {
+              // no one handled the touch, try sending it as a mouse event
+              event.convertTouchEventToMouseEvent();
+              this.mousemove(event);
+            }
+          }
+        }, this);
       }
       // else this was a move for an unsupported multi-touch, so do nothing
     }
@@ -832,7 +840,7 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
    */
   touchend: function (event) {
     var view;
-    var touch, i;
+    var touch, i, target;
     var handleTouchEnd = false;
 
     if (this._activeTouch) {
@@ -844,18 +852,35 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
       }
 
       if (handleTouchEnd) {
-        // For touchend the target of the touch is always the same as the touchstart target, so the view should be the same
-        view = this._activeTouch.touchStartView;
+        SC.run(function () {
+          event.copyTouchProperties(touch);
 
-        event.copyTouchProperties(touch);
+          // handle drag if there is one
+          if (this._drag) {
+            event.convertTouchEventToMouseEvent();
+            this._drag.tryToPerform('mouseUp', event);
+            this._drag = null;
+            this._mouseDownView = null; // drag is set as the mouseDownView, so clear
+          } else {
+            // For touchend the target of the touch is always the same as the touchstart target, so the view should be the same
+            view = this._activeTouch.touchStartView;
 
-        if (view) {
-          // View handled touchStart so it must handle touchEnd
-          this.sendEvent('touchEnd', event, view);
-        } else {
-          event.convertTouchEventToMouseEvent(); // TODO_JA - this can lead to an invalid target if the end occurred off the browser
-          this.mouseup(event);
-        }
+            // Sigh, if the touch moved offscreen Pointer Events send pointercancel, Touch Events just send touchend. Check
+            // that we have a target element, if not then don't send any events, this should give us consistent behavior and
+            // avoid our mouse compatibility event from having a null target
+            target = document.elementFromPoint(event.pageX, event.pageY);
+
+            if (target) {
+              if (view) {
+                // View handled touchStart so it must handle touchEnd
+                this.sendEvent('touchEnd', event, view);
+              } else {
+                event.convertTouchEventToMouseEvent();
+                this.mouseup(event);
+              }
+            }
+          }
+        }, this);
 
         // clear touch data now that touch is over
         this._activeTouch = null;
@@ -868,12 +893,39 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     return event.sendCompatibilityEvents;
   },
 
+  /**
+   * Called when a touch is cancelled by the browser. In my testing this event was never sent by desktop browsers but
+   * handle it just to be safe.
+   *
+   * @param {SC.Event} event - The normalized event
+   */
   touchcancel: function (event) {
-    console.log('Touch cancel sent');
-    // TODO_JA - treat this the same as an end?
+    var touch, i;
+    var handleTouchCancel = false;
 
-    // clear touch data now that touch is over
-    this._activeTouch = null;
+    if (this._activeTouch) {
+      // Does this touchcancel correspond to our active touch?
+      for (i = 0; i < event.changedTouches.length; ++i && !handleTouchCancel) {
+        touch = event.changedTouches[i];
+
+        handleTouchCancel = touch.identifier === this._activeTouch.touchID;
+      }
+
+      if (handleTouchCancel) {
+        // clear touch data now that touch is over
+        this._activeTouch = null;
+
+        if (this._drag) {
+          SC.run(function () {
+            this._drag.cancelDrag();
+          }, this);
+          this._drag = null;
+          this._mouseDownView = null; // drag is set as the mouseDownView, so clear
+        }
+      }
+      // else this was a cancel for an unsupported multi-touch, so do nothing
+    }
+    // else there was no corresponding touchstart, just ignore it
   },
 
   // ...........................................................................
@@ -895,7 +947,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     // existing functionality we want the browser to change the mouse pointer events into normal mouse events and only
     // try to handle touch events here
     if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
-
       view = this.targetViewForEvent(event);
 
       if (view) {
@@ -932,8 +983,6 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     // no other touch pointers active when it becomes active and non-primary touch events shouldn't generate
     // compatibility mouse events
 
-    // TODO_JA - verify non-primary touch doesn't generate compatibility event
-
     return allowCompatibilityEvent;
   },
 
@@ -951,13 +1000,19 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     // existing functionality we want the browser to change the mouse pointer events into normal mouse events and only
     // try to handle touch events here
     if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
+      SC.run(function () {
+        // handle drag if there is one
+        if (this._drag) {
+          this._drag.tryToPerform('mouseDragged', event);
+        } else {
+          view = this.targetViewForEvent(event);
 
-      view = this.targetViewForEvent(event);
-
-      if (!view || !this.sendEvent('touchesDragged', event, view)) {
-        // no one handled the touch, try sending it as a mouse event
-        this.mousemove(event);
-      }
+          if (!view || !this.sendEvent('touchesDragged', event, view)) {
+            // no one handled the touch, try sending it as a mouse event
+            this.mousemove(event);
+          }
+        }
+      }, this);
 
       allowCompatibilityEvent = event.sendCompatibilityEvents;
     }
@@ -973,34 +1028,109 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
   pointerup: function (event) {
     var allowCompatibilityEvent = true;
     var pointerEvent = event.originalEvent;
-    var view;
+    var view, clickTarget;
 
     if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
+      SC.run(function () {
+        // handle drag if there is one
+        if (this._drag) {
+          this._drag.tryToPerform('mouseUp', event);
+          this._drag = null;
+          this._mouseDownView = null; // drag is set as the mouseDownView, so clear
+        } else if (this._activePointer) {
+          view = this._activePointer.pointerDownView;
 
-      // TODO_JA - what is the target if this occurred off of the browser? Same problems as touch events?
-      view = this._activePointer.pointerDownView;
-
-      if (view) {
-        // View handled touchStart so it must handle touchEnd
-        this.sendEvent('touchEnd', event, view);
-      } else {
-        this.mouseup(event);
-      }
-
-      // TODO_JA - prevent click events like mouse events do? Even needed?
+          if (view) {
+            // View handled touchStart so it must handle touchEnd
+            this.sendEvent('touchEnd', event, view);
+          } else {
+            this.mouseup(event);
+          }
+        }
+        // else pointerdown occurred not in our frame, just ignore
+      }, this);
 
       allowCompatibilityEvent = event.sendCompatibilityEvents;
 
       // clean up
       this._activePointer = null;
+
+      // If the target is no longer in the document and the event would have otherwise gone to an iframe, on Chrome the
+      // compatibility click event is sent to the iframe. To prevent this click bleed append a small click eater.
+      if (!document.body.contains(event.target)) {
+        clickTarget = document.elementFromPoint(event.pageX, event.pageY);
+        if (clickTarget && clickTarget.nodeName === 'IFRAME') {
+          this._appendClickEater(event.originalEvent);
+        }
+      }
     }
 
     return allowCompatibilityEvent;
   },
 
+  /**
+   * Called when a pointer is cancelled, such as when the browser starts scrolling or when the pointer moves off the
+   * browser window.
+   *
+   * @param {SC.Event} event - The normalized event
+   */
   pointercancel: function (event) {
-    console.log('Pointer cancel sent');
-    // TODO_JA - treat this the same as an end?
+    var pointerEvent = event.originalEvent;
+
+    if (pointerEvent.pointerType === 'touch' && pointerEvent.isPrimary) {
+      // clean up
+      this._activePointer = null;
+
+      if (this._drag) {
+        SC.run(function () {
+          this._drag.cancelDrag();
+        }, this);
+        this._drag = null;
+        this._mouseDownView = null; // drag is set as the mouseDownView, so clear
+      }
+    }
+  },
+
+  /**
+   * Appends a click eater for the passed pointer event.
+   *
+   * @param {PointerEvent} pointerEvent - The Pointer Event to append a click eater for
+   * @private
+   */
+  _appendClickEater: function (pointerEvent) {
+    var clickEater;
+
+    // create the click eater if we don't have one
+    if (!this._clickEater) {
+      clickEater = document.createElement('div');
+      this._clickEater = $(clickEater);
+      this._clickEater.addClass('sc-click-eater');
+      this._clickEater.css('position', 'absolute');
+
+      // Even though this does nothing, we need this listener or Chrome will still send the click to the iframe
+      this._clickEater.on('click', function () {});
+    }
+
+    // position it to eat the click
+    this._clickEater.css({
+      'left': pointerEvent.pageX,
+      'top': pointerEvent.pageY,
+      'width': 1,
+      'height': 1
+    });
+
+    // add to document
+    this._clickEater.appendTo('body');
+  },
+
+  /**
+   * Removes the click eater if it was added to the document
+   * @private
+   */
+  _removeClickEater: function () {
+    if (this._clickEater) {
+      this._clickEater.detach();
+    }
   },
 
   // ..........................................................
@@ -1386,6 +1516,8 @@ SC.RootResponder = SC.Object.extend(/** @scope SC.RootResponder.prototype */{
     @returns {Boolean} whether the event should be propagated to the browser
   */
   click: function(evt) {
+    this._removeClickEater();
+
     if (!this._lastMouseUpCustomHandling || !this._lastMouseDownCustomHandling) {
       evt.preventDefault();
       evt.stopPropagation();
