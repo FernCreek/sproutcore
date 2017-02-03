@@ -966,8 +966,9 @@ SC.ScrollView = SC.View.extend({
    * @returns {Boolean} If the event was handled
    */
   touchesDragged: function (event) {
-    var shouldScroll = false;
+    var shouldScrollView = false;
     var scrollingAllowed = this._scrollingIsAllowed;
+    var startScrolling = true;
     var touchStart = this._touchStartEvent;
     var verticalScrollOffset = this.get('verticalScrollOffset');
     var horizontalScrollOffset = this.get('horizontalScrollOffset');
@@ -991,32 +992,38 @@ SC.ScrollView = SC.View.extend({
         } else {
           deltaX = event.pageX - touchStart.pageX;
           deltaY = event.pageY - touchStart.pageY;
+
+          // Only start scrolling once the touch has moved a little, needed for Edge which will send more move events
+          startScrolling = Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5;
         }
 
-        // check if we can scroll
-        if (this.get('canScrollVertical')) {
-          shouldScroll = deltaY > 0 && verticalScrollOffset > 0 ||
-            deltaY < 0 && verticalScrollOffset < maximumVerticalScrollOffset;
-        }
+        if (startScrolling) {
+          // check if we can scroll
+          if (this.get('canScrollVertical')) {
+            shouldScrollView = deltaY > 0 && verticalScrollOffset > 0 ||
+              deltaY < 0 && verticalScrollOffset < maximumVerticalScrollOffset;
+          }
 
-        if (this.get('canScrollHorizontal') && !shouldScroll) {
-          shouldScroll = deltaX > 0 && horizontalScrollOffset > 0 ||
-            deltaX < 0 && horizontalScrollOffset < maximumHorizontalScrollOffset;
-        }
+          if (this.get('canScrollHorizontal') && !shouldScrollView) {
+            shouldScrollView = deltaX > 0 && horizontalScrollOffset > 0 ||
+              deltaX < 0 && horizontalScrollOffset < maximumHorizontalScrollOffset;
+          }
 
-        this._didTouchScroll = true;
+          this._didTouchScroll = true;
 
-        if (shouldScroll) {
-          // perform the scroll, reverse sign of delta since touch scrolling is backwards from mouse wheel scrolling
-          this.scrollBy(deltaX * -1, deltaY * -1);
+          if (shouldScrollView) {
+            // perform the scroll, reverse sign of delta since touch scrolling is backwards from mouse wheel scrolling
+            this.scrollBy(deltaX * -1, deltaY * -1);
+          }
+
+          this._scrollingIsAllowed = scrollingAllowed;
+          this._lastTouchDrag = event;
         }
       }
-      this._scrollingIsAllowed = scrollingAllowed;
-      this._lastTouchDrag = event;
     }
 
 
-    return shouldScroll;
+    return shouldScrollView;
   },
 
   /**
@@ -1028,7 +1035,8 @@ SC.ScrollView = SC.View.extend({
   touchEndCapture: function (event) {
     var didScroll = this._didTouchScroll;
 
-    this._resetTouchMembers();
+    // Cleanup all known scroll views incase we did a touch scroll and in case we have nested scroll views
+    this._cleanupAllScrollViews();
 
     // block other views from handling touch end if we scrolled, this prevents unexpected side effects of scrolling
     return didScroll;
@@ -1044,10 +1052,33 @@ SC.ScrollView = SC.View.extend({
   mouseUpCapture: function (event) {
     var didScroll = this._didTouchScroll;
 
-    this._resetTouchMembers();
+    // Cleanup all known scroll views incase we did a touch scroll and in case we have nested scroll views
+    this._cleanupAllScrollViews();
 
     // block other views from handling mouse up if we scrolled, this prevents unexpected side effects of scrolling
     return didScroll;
+  },
+
+  /**
+   * Goes through all known scroll views and reset's their touch scrolling members. We need this clean up code in order
+   * to properly reset after a touch scroll if it was within nested scroll views.
+   *
+   * @private
+   */
+  _cleanupAllScrollViews: function () {
+    var scrollViewsMap = SC.ScrollView._scrollableViews;
+    var scrollViewID, scrollView;
+
+    if (scrollViewsMap) {
+      for (scrollViewID in scrollViewsMap) {
+        if (scrollViewsMap.hasOwnProperty(scrollViewID)) {
+          scrollView = scrollViewsMap[scrollViewID];
+          if (scrollView && scrollView._resetTouchMembers) {
+            scrollView._resetTouchMembers();
+          }
+        }
+      }
+    }
   },
 
   /**
@@ -1187,15 +1218,28 @@ SC.ScrollView = SC.View.extend({
       contentView.addObserver('calculatedHeight', this, this.contentViewFrameDidChange);
     }
 
-    if (this.get('isVisibleInWindow')) this._scsv_registerAutoscroll() ;
+    if (this.get('isVisibleInWindow')) this._scsv_registerAutoscroll();
+
+    SC.ScrollView.addScrollableView(this);
+  },
+
+  /**
+   * Override to de-register this as an active scroll view.
+   *
+   * @returns {SC.Object} this
+   */
+  destroy: function () {
+    SC.ScrollView.removeScrollableView(this);
+
+    return sc_super();
   },
 
   /** @private
     Registers/deregisters view with SC.Drag for autoscrolling
   */
   _scsv_registerAutoscroll: function() {
-    if (this.get('isVisibleInWindow')) SC.Drag.addScrollableView(this);
-    else SC.Drag.removeScrollableView(this);
+    if (this.get('isVisibleInWindow')) SC.ScrollView.addScrollableView(this);
+    else SC.ScrollView.removeScrollableView(this);
   }.observes('isVisibleInWindow'),
 
   /** @private
@@ -1435,4 +1479,32 @@ SC.ScrollView = SC.View.extend({
   /** @private */
   _scroll_horizontalScrollOffset: 0
 
+});
+
+SC.ScrollView.mixin({
+  /**
+   * Map of all active scroll views. Used by SC.ScrollView & SC.Drag
+   * @type {Object}
+   */
+  _scrollableViews: {},
+
+  /**
+   Register the view object as a scrollable view.  These views will
+   auto-scroll during a drag.
+
+   @param {SC.View} target The view that should be auto-scrolled
+   */
+  addScrollableView: function(target) {
+    this._scrollableViews[SC.guidFor(target)] = target;
+  },
+
+  /**
+   Remove the view object as a scrollable view.  These views will auto-scroll
+   during a drag.
+
+   @param {SC.View} target A previously registered scrollable view
+   */
+  removeScrollableView: function(target) {
+    delete this._scrollableViews[SC.guidFor(target)];
+  }
 });

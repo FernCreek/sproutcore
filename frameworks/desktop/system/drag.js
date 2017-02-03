@@ -51,17 +51,12 @@ SC.View.reopen(
     // register for drags
     if (this.get('isDropTarget')) { SC.Drag.addDropTarget(this) ; }
 
-    // register scroll views for autoscroll during drags
-    if (this.get('isScrollable')) { SC.Drag.addScrollableView(this) ; }
   }.enhance(),
 
   /** @private */
   destroy: function(original) {
     // unregister for drags
     if (this.get('isDropTarget')) { SC.Drag.removeDropTarget(this) ; }
-
-    // unregister for autoscroll during drags
-    if (this.get('isScrollable')) { SC.Drag.removeScrollableView(this) ; }
 
     return original();
   }.enhance()
@@ -903,7 +898,7 @@ SC.Drag = SC.Object.extend(/** @scope SC.Drag.prototype */ {
     
     // build array of scrollable views
     var ret = [] ;
-    var hash = SC.Drag._scrollableViews ;
+    var hash = SC.ScrollView._scrollableViews ;
     for (var key in hash) {
       if (hash.hasOwnProperty(key)) ret.push(hash[key]) ;
     }
@@ -950,7 +945,7 @@ SC.Drag = SC.Object.extend(/** @scope SC.Drag.prototype */ {
     return null if none is found.
   */
   _findNextScrollableView: function(view) {
-    var scrollableViews = SC.Drag._scrollableViews ;
+    var scrollableViews = SC.ScrollView._scrollableViews;
     while (view = view.get('parentView')) {
       if (scrollableViews[SC.guidFor(view)]) return view ;
     }
@@ -977,9 +972,6 @@ SC.Drag.mixin(
   /** @private */
   _dropTargets: {},
   
-  /** @private */
-  _scrollableViews: {},
-  
   /**
     Register the view object as a drop target.
     
@@ -1003,26 +995,5 @@ SC.Drag.mixin(
   */
   removeDropTarget: function(target) {
     delete this._dropTargets[SC.guidFor(target)];
-  },
-  
-  /**
-    Register the view object as a scrollable view.  These views will 
-    auto-scroll during a drag.
-    
-    @param {SC.View} target The view that should be auto-scrolled
-  */
-  addScrollableView: function(target) {
-    this._scrollableViews[SC.guidFor(target)] = target;
-  },
-  
-  /**
-    Remove the view object as a scrollable view.  These views will auto-scroll
-    during a drag.
-    
-    @param {SC.View} target A previously registered scrollable view
-  */
-  removeScrollableView: function(target) {
-    delete this._scrollableViews[SC.guidFor(target)];
   }
-  
 });

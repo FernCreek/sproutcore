@@ -649,8 +649,8 @@ SC.MenuScrollView = SC.ScrollView.extend(
   
   /** @private Registers/deregisters view with SC.Drag for autoscrolling */
   _scsv_registerAutoscroll: function() {
-    if (this.get('isVisibleInWindow')) SC.Drag.addScrollableView(this);
-    else SC.Drag.removeScrollableView(this);
+    if (this.get('isVisibleInWindow')) SC.ScrollView.addScrollableView(this);
+    else SC.ScrollView.removeScrollableView(this);
   }.observes('isVisibleInWindow'),
   
   /** @private
