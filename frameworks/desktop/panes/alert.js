@@ -551,7 +551,7 @@ SC.AlertPane.mixin(
   _argumentsCall: function(args) {
     var ret = args;
     if(SC.typeOf(args)!==SC.T_HASH) {
-      //@if(debug)
+      //@ifdef DEBUG
       SC.debug('SC.AlertPane has changed the signatures for show(), info(), warn(), error() and plain(). Please update accordingly.');
       //@endif
       var normalizedArgs = this._normalizeArguments(arguments);

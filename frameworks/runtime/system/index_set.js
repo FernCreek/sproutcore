@@ -78,7 +78,7 @@ SC.IndexSet = SC.mixin({},
     ret.initObservable();
     ret.registerDependentKey('min', '[]');
 
-    // @if (debug)
+    // @ifdef DEBUG
     // Validate the input to ensure that the parameters
     // match the function definition.
     // This is here because `create` doesn't follow the

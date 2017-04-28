@@ -197,7 +197,7 @@ SC.AutoResize = {
     Begins observing the auto resize field.
   */
   initMixin: function() {
-    // @if (debug)
+    // @ifdef DEBUG
     if (!this.get('supportsAutoResize')) {
       throw "View `%@` does not support automatic resize. See documentation for SC.AutoResize".fmt(this);
     }

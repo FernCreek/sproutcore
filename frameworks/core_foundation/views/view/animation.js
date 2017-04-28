@@ -69,7 +69,7 @@ SC.View.reopen(
 
     // In the case of zero duration, just adjust and call the callback.
     if (options.duration === 0) {
-      //@if(debug)
+      //@ifdef DEBUG
       // Provide a little developer support if they are doing something that should be considered wrong.
       SC.warn("Developer Warning: SC.View:animate() was called with a duration of 0 seconds.");
       //@endif

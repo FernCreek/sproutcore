@@ -117,7 +117,7 @@ SC.Observers = {
 
   _TMP_OUT: [],
 
-  //@if(debug)
+  //@ifdef DEBUG
   _temporaryObservers: {},
   //@endif
 
@@ -190,7 +190,7 @@ SC.Observers = {
               tuple = SC.tupleForPropertyPath(chainedPath, item[3]);
               if (tuple && tuple[0].addObserver) {
                 (function(tuple, item) {
-                  //@if(debug)
+                  //@ifdef DEBUG
                   var temporaryPath = chainedPath;
                   var temporaryObservers = SC.Observers._temporaryObservers;
                   temporaryObservers[temporaryPath] = (temporaryObservers[temporaryPath] || 0) + 1;
@@ -199,7 +199,7 @@ SC.Observers = {
                   tuple[0].addObserver(tuple[1], item[1], function tempObserver() {
                     var innerTuple = SC.tupleForPropertyPath( item[0], item[3] );
                     if (innerTuple && innerTuple[0].addObserver) {
-                      //@if(debug)
+                      //@ifdef DEBUG
                       if (--temporaryObservers[temporaryPath] === 0) {
                         delete temporaryObservers[temporaryPath];
                       }

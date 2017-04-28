@@ -453,7 +453,7 @@ SC.SelectView = SC.ButtonView.extend(
         name = nameKey ? (object.get ?
           object.get(nameKey) : object[nameKey]) : object.toString();
 
-        //@if(debug)
+        //@ifdef DEBUG
         // Help the developer if they don't define a matching itemTitleKey.
         if (!name) {
           SC.warn("Developer Warning: SC.SelectView: Every item, other than separator items, should have the '%@' property defined!".fmt(nameKey));

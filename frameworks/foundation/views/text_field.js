@@ -340,7 +340,7 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     if (continuouslyUpdatesValue !== null && continuouslyUpdatesValue !== undefined) {
       this.set('applyImmediately',  continuouslyUpdatesValue);
 
-      // @if (debug)
+      // @ifdef DEBUG
       SC.Logger.warn("SC.TextFieldView#continuouslyUpdatesValue is deprecated. Please use #applyImmediately instead.");
       // @endif
     }
@@ -707,7 +707,7 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
         // Internet Explorer won't let us change the type attribute later
         // so we force it to password if needed now, or if the value is not the hint
         if (this.get('isPassword')) {
-          // @if (debug)
+          // @ifdef DEBUG
           SC.Logger.warn("SC.TextFieldView#isPassword is deprecated. Please set SC.TextFieldView#type to password instead.");
           // @endif
 

@@ -42,7 +42,7 @@ SC.ObserverSet = {
       indexes._size++;
       member = [target, method, context];
 
-      //@if(debug)
+      //@ifdef DEBUG
       // If deferred call logging info was specified (i.e., in debug mode when
       // such logging is enabled), we need to add it to the enqueued target/
       // method.
@@ -52,7 +52,7 @@ SC.ObserverSet = {
       members.push(member);
     }
     else {
-      //@if(debug)
+      //@ifdef DEBUG
       // If deferred call logging info was specified (i.e., in debug mode when
       // such logging is enabled), we need to add it to the enqueued target/
       // method.
@@ -118,7 +118,7 @@ SC.ObserverSet = {
   invokeMethods: function() {
     var members = this.members, member;
 
-    //@if(debug)
+    //@ifdef DEBUG
     var shouldLog = SC.LOG_DEFERRED_CALLS,
         target, method, methodName, loggingInfo, loggingInfos,
         originatingTarget, originatingMethod, originatingMethodName,
@@ -131,7 +131,7 @@ SC.ObserverSet = {
       // method.call(target);
       member[1].call(member[0]);
 
-      //@if(debug)
+      //@ifdef DEBUG
       // If we have logging info specified for who scheduled the particular
       // invocation, and logging is enabled, then output it.
       if (shouldLog) {
@@ -187,7 +187,7 @@ SC.ObserverSet = {
     for( var i=0, l=memberArray.length; i<l; i++ ) {
       newMembers[i] = SC.clone(memberArray[i]);
       newMembers[i].length = 3;
-      //@if(debug)
+      //@ifdef DEBUG
       newMembers[i].length = 4;
       //@endif
     }

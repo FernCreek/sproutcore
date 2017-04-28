@@ -43,7 +43,7 @@ sc_require('private/observer_set');
 // setting SC.LOG_DEFERRED_CALLS.  We'll declare the variable explicitly to make
 // life easier for people who want to enter it inside consoles that auto-
 // complete.
-//@if (debug)
+//@ifdef DEBUG
 if (!SC.LOG_DEFERRED_CALLS) SC.LOG_DEFERRED_CALLS = false;
 //@endif
 
@@ -155,7 +155,7 @@ SC.RunLoop = SC.Object.extend(/** @scope SC.RunLoop.prototype */ {
 
     var deferredCallLoggingInfo;      // Used only in debug mode
 
-    //@if (debug)
+    //@ifdef DEBUG
     // When in debug mode, SC.Object#invokeOnce() will pass in the originating
     // method, target, and stack.  That way, we'll record the interesting parts
     // rather than having most of these calls seemingly coming from
@@ -216,7 +216,7 @@ SC.RunLoop = SC.Object.extend(/** @scope SC.RunLoop.prototype */ {
 
     var deferredCallLoggingInfo;      // Used only in debug mode
 
-    //@if (debug)
+    //@ifdef DEBUG
     // When in debug mode, SC.Object#invokeOnce() will pass in the originating
     // method, target, and stack.  That way, we'll record the interesting parts
     // rather than having most of these calls seemingly coming from
@@ -379,7 +379,7 @@ SC.RunLoop = SC.Object.extend(/** @scope SC.RunLoop.prototype */ {
 });
 
 
-//@if (debug)
+//@ifdef DEBUG
  /**
   Will return the recent stack as a hash with numerical keys, for nice output
   in some browsers’ debuggers.  The “recent” stack is capped at 6 entries.

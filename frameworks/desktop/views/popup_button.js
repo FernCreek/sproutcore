@@ -177,7 +177,7 @@ SC.PopupButtonView = SC.ButtonView.extend(
     var menu = this.get('instantiatedMenu') ;
 
     if (!menu) {
-      // @if (debug)
+      // @ifdef DEBUG
       SC.Logger.warn("SC.PopupButton - Unable to show menu because the menu property is set to %@.".fmt(menu));
       // @endif
       return NO ;
