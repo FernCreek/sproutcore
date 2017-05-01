@@ -39,8 +39,7 @@
       color:#A0A0A0;
     }
     .checkbox{
-      background-image: url(data:image/gif;base64,R0lGODlhAQABAJAAAP///wAAACH5BAUQAAAALAAAAAABAAEAAAICBAEAOw==) top left no-repeat; 
-      *background-image: sc_static('foundation:blank.gif') top left no-repeat; /* IE < 8 */
+      background-image: url(data:image/gif;base64,R0lGODlhAQABAJAAAP///wAAACH5BAUQAAAALAAAAAABAAEAAAICBAEAOw==) top left no-repeat;
     }
     
   }
@@ -65,8 +64,7 @@
     -webkit-border-radius: 2px;
     -moz-border-radius: 2px;
     &.inactive {
-      background-image: url(data:image/gif;base64,R0lGODlhAQABAJAAAP///wAAACH5BAUQAAAALAAAAAABAAEAAAICBAEAOw==) top left no-repeat; 
-      *background-image: sc_static('foundation:blank.gif') top left no-repeat; /* IE < 8 */
+      background-image: url(data:image/gif;base64,R0lGODlhAQABAJAAAP///wAAACH5BAUQAAAALAAAAAABAAEAAAICBAEAOw==) top left no-repeat;
     }
   }
   
