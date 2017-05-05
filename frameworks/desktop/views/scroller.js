@@ -541,17 +541,13 @@ SC.ScrollerView = SC.View.extend(/** @scope SC.ScrollerView.prototype */ {
 
     // Convert the mouseDown coordinates to the view's coordinates
     clickLocation = this.convertFrameFromView({ x: evt.pageX, y: evt.pageY });
+    this._lastMouseLocation = clickLocation;
 
     // Determine the subcontrol that was clicked
     if (target.className.indexOf('thumb') >= 0) {
-
-      clickLocation.x -= thumbPosition;
-      clickLocation.y -= thumbPosition;
-
       // Store the starting state so we know how much to adjust the
       // thumb when the user drags
       this._thumbDragging = YES;
-      this._thumbOffset = clickLocation;
       this._mouseDownLocation = { x: evt.pageX, y: evt.pageY };
       this._thumbPositionAtDragStart = this.get('thumbPosition');
       this._valueAtDragStart = this.get("value");
@@ -590,8 +586,6 @@ SC.ScrollerView = SC.View.extend(/** @scope SC.ScrollerView.prototype */ {
           break;
       }
 
-      this._lastMouseLocation = clickLocation;
-
       if (scrollToClick) {
         this.set('value', this.valueForPosition(mousePosition - (thumbLength / 2)));
 
@@ -599,7 +593,6 @@ SC.ScrollerView = SC.View.extend(/** @scope SC.ScrollerView.prototype */ {
         thumbPosition = this.get('thumbPosition');
 
         this._thumbDragging = YES;
-        this._thumbOffset = {x: frame.x - thumbPosition, y: frame.y - thumbPosition };
         this._mouseDownLocation = {x:evt.pageX, y:evt.pageY};
         this._thumbPositionAtDragStart = thumbPosition;
         this._valueAtDragStart = this.get("value");
