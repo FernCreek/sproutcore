@@ -128,7 +128,7 @@ SC.TemplateCollectionView = SC.TemplateView.extend(
     var templateName = this.get('inverseTemplateName'),
         template = this.get('templates').get(templateName);
 
-    //@if(debug)
+    //@ifdef DEBUG
     if (!template && templateName) {
       SC.Logger.warn('%@ - Unable to find template "%@".'.fmt(this, templateName));
     }

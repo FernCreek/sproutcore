@@ -33,7 +33,7 @@ SC.Validator.Date = SC.Validator.extend(
     /*
       TODO [CC] deprecated warning, we should remove this in a future release
     */
-    // @if (debug)
+    // @ifdef DEBUG
     if (format.indexOf('%') === -1) {
       SC.Logger.warn("You're using a Date validator with a format (%@) for time.js, which has been deprecated. Please change your format to something compatible with SC.DateTime".fmt(format));
       format = this.constructor.prototype.format;
@@ -62,7 +62,7 @@ SC.Validator.Date = SC.Validator.extend(
     /*
       TODO [CC] deprecated warning, we should remove this in a future release
     */
-    // @if (debug)
+    // @ifdef DEBUG
     if (format.indexOf('%') === -1) {
       SC.Logger.warn("You're using a Date validator with a format (%@) for time.js, which has been deprecated. Please change your format to something compatible with SC.DateTime".fmt(format));
       format = this.constructor.prototype.format;

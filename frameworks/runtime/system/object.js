@@ -133,7 +133,7 @@ SC._object_extend = function _object_extend(base, ext, proto) {
         if (bindings[i] === key) {
           // There is already a binding for this key; remove the one defined from the base
           bindingsToRemove.add(i);
-          //@if(debug)
+          //@ifdef DEBUG
           if (SC.LOG_DUPLICATE_BINDINGS) {
             SC.warn("Developer Warning: '%@' was defined twice on the same class, likely because it was defined on both the parent and its subclass.  See the initial line of the following trace:".fmt(key));
             SC.Logger.trace();
@@ -425,7 +425,7 @@ SC.mixin(SC.Object, /** @scope SC.Object */ {
 
     if (this.subclasses) {
       this.subclasses.forEach(function(subclass, idx) {
-        //@if(debug)
+        //@ifdef DEBUG
         // Turned Off, SC.View.reopen() makes this too obnoxious. SC.warn("Developer Warning: %@ was re-opened after subclasses were defined.  We're still registering the additions to all subclasses of %@, but it would be safer to reopen() %@ before subclassing it.".fmt(this, this, this));
         //@endif
         var key, value;
@@ -566,7 +566,7 @@ SC.mixin(SC.Object, /** @scope SC.Object */ {
   */
   design: function() {
     if (this.isDesign) {
-      // @if (debug)
+      // @ifdef DEBUG
       SC.Logger.warn("SC.Object#design called twice for %@.".fmt(this));
       // @endif
       return this;
@@ -871,7 +871,7 @@ SC.Object.prototype = {
     @returns {SC.Object} receiver
   */
   invokeOnce: function(method) {
-    //@if(debug)
+    //@ifdef DEBUG
     // If we're logging deferred calls, send along the information that needs to
     // be recorded.
     var originatingTarget, originatingMethod, originatingStack;
@@ -919,7 +919,7 @@ SC.Object.prototype = {
     @returns {SC.Object} receiver
   */
   invokeLast: function(method) {
-    //@if(debug)
+    //@ifdef DEBUG
     // If we're logging deferred calls, send along the information that needs to
     // be recorded.
     var originatingTarget, originatingMethod, originatingStack;
@@ -967,7 +967,7 @@ SC.Object.prototype = {
     @returns {SC.Object} receiver
    */
   invokeNext: function(method) {
-    //@if(debug)
+    //@ifdef DEBUG
     // If we're logging deferred calls, send along the information that needs to
     // be recorded.
     var originatingTarget, originatingMethod, originatingStack;

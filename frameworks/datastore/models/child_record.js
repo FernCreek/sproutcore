@@ -14,7 +14,7 @@ sc_require('models/record');
 SC.ChildRecord = SC.Record.extend({});
 
 SC.ChildRecord.extend = function() {
-  // @if (debug)
+  // @ifdef DEBUG
   SC.warn("Developer Warning: SC.ChildRecord is deprecated. Please extend SC.Record instead.");
   // @endif
   return SC.Record.extend.apply(this, arguments);

@@ -211,7 +211,7 @@ SC.ImageView = SC.View.extend(SC.Control, SC.InnerFrame,
     this._valueDidChange();
 
     if (this.get('useImageCache') !== undefined) {
-      //@if(debug)
+      //@ifdef DEBUG
       SC.warn("Developer Warning: %@ has useImageCache set, please set useImageQueue instead".fmt(this));
       //@endif
       this.set('useImageQueue', this.get('useImageCache'));

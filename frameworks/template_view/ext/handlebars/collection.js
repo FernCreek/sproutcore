@@ -12,7 +12,7 @@ Handlebars.registerHelper('collection', function(path, options) {
   collectionClass = path ? SC.getPath(this, path) || SC.getPath(path) :
     SC.TemplateCollectionView;
 
-  // @if (debug)
+  // @ifdef DEBUG
   if (!collectionClass) {
     throw "%@ #collection: Could not find %@".fmt(data.view, path);
   } else if (!SC.kindOf(collectionClass, SC.TemplateCollectionView)) {

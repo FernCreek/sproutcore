@@ -70,7 +70,7 @@ SC.TemplateView = SC.CoreView.extend(
         template = this.get('templates').get(templateName);
 
     if (!template) {
-      //@if(debug)
+      //@ifdef DEBUG
       if (templateName) {
         SC.Logger.warn('%@ - Unable to find template "%@".'.fmt(this, templateName));
       }

@@ -240,7 +240,7 @@ SC.View.reopen(
       context.addClass(renderDelegate.className);
     }
     
-    // @if(debug)
+    // @ifdef DEBUG
     if (renderDelegate && renderDelegate.name) {
       SC.Logger.error("Render delegates now use 'className' instead of 'name'.");
       SC.Logger.error("Name '%@' will be ignored.", renderDelegate.name);
@@ -285,7 +285,7 @@ SC.View.reopen(
 */
 SC.View._RenderDelegateProxy = {
 
-  //@if(debug)
+  //@ifdef DEBUG
   // for testing:
   isViewRenderDelegateProxy: YES,
   //@endif

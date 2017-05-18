@@ -26,7 +26,7 @@ SC.SelectButtonView = SC.ButtonView.extend(
 /** @scope SC.SelectButtonView.prototype */ {
 
   init: function(){
-    // @if (debug)
+    // @ifdef DEBUG
     SC.Logger.warn("SC.SelectButtonView is deprecated. Please use SC.SelectView instead.");
     // @endif
     sc_super();

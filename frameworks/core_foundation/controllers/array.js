@@ -391,7 +391,7 @@ SC.ArrayController = SC.Controller.extend(SC.Array, SC.SelectionSupport,
         key = orderBy.objectAt(i);
 
         if (key.search(/(ASC|DESC)/) === 0) {
-          //@if(debug)
+          //@ifdef DEBUG
           SC.warn("Developer Warning: SC.ArrayController's orderBy direction syntax has been changed to match that of SC.Query and MySQL.  Please change your String to 'key DESC' or 'key ASC'.  Having 'ASC' or 'DESC' precede the key has been deprecated.");
           //@endif
           match = key.match(/^(ASC )?(DESC )?(.*)$/);

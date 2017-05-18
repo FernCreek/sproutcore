@@ -674,7 +674,7 @@ SC.MenuPane = SC.PickerPane.extend(
       height = item.get(heightKey);
       if (!height) {
         height = item.get(separatorKey) ? separatorHeight : defaultHeight;
-        //@if(debug)
+        //@ifdef DEBUG
         // TODO: Remove in 1.10 and 2.0
         // Help the developer if they were relying on the previously misleading
         // default value of itemSeparatorKey.  We need to ensure that the change

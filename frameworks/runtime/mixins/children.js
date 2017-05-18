@@ -25,7 +25,7 @@ SC.Children = {
     if (this._childProperties.indexOf(key) < 0) {
       this._childProperties.push(key);
     }
-    // @if (debug)
+    // @ifdef DEBUG
     else {
       SC.warn('Developer Warning: Attempted to add a duplicate key %@ as a child property.', key);
     }
@@ -63,7 +63,7 @@ SC.Children = {
     if (this._childObjects.indexOf(obj) < 0) {
       this._childObjects.push(obj);
     }
-    // @if (debug)
+    // @ifdef DEBUG
     else {
       SC.warn('Developer Warning: Attempted to add a duplicate object %@ as a child object.', obj);
     }

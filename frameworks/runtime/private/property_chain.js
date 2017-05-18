@@ -200,7 +200,7 @@ SC._PropertyChain = SC.Object.extend(SC.Copyable,
     return ret;
   }
 
-  // @if (debug)
+  // @ifdef DEBUG
   ,
   /**
     Returns a string representation of the chain segment.

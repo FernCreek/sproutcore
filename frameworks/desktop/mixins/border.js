@@ -109,7 +109,7 @@ SC.Border = {
 
   /** @private */
   initMixin: function() {
-    //@if(debug)
+    //@ifdef DEBUG
     SC.warn("Developer Warning: SC.Border is deprecated, please set border in your layout");
     //@endif
     this._sc_border_borderStyleDidChange();

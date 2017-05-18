@@ -14,7 +14,7 @@ SC.mixin ( /** @scope SC */ {
 
   /** Returns hex color from hsv value */
   convertHsvToHex: function (h, s, v) {
-    // @if (debug)
+    // @ifdef DEBUG
     SC.Logger.warn("SC.convertHsvToHex is deprecated. Please use SC.Color.hsvToRgb instead.");
     // @endif
     var rgb = SC.Color.hsvToRgb(h, s, v);
@@ -23,7 +23,7 @@ SC.mixin ( /** @scope SC */ {
 
   /** Returns hsv color from hex value */
   convertHexToHsv: function (hex) {
-    // @if (debug)
+    // @ifdef DEBUG
     SC.Logger.warn("SC.convertHexToHsv is deprecated. Please use SC.Color.rgbToHsv instead.");
     // @endif
     var color = SC.Color.from(hex);
@@ -36,7 +36,7 @@ SC.mixin ( /** @scope SC */ {
 
   // return an array of r,g,b colour
   expandColor: function(color) {
-    // @if (debug)
+    // @ifdef DEBUG
     SC.Logger.warn("SC.expandColor is deprecated. Please use SC.Color.from instead.");
     // @endif
     var hexColor, red, green, blue;
@@ -51,7 +51,7 @@ SC.mixin ( /** @scope SC */ {
 
   // parse rgb color or 3-digit hex color to return a properly formatted 6-digit hex colour spec, or false
   parseColor: function(string) {
-    // @if (debug)
+    // @ifdef DEBUG
     SC.Logger.warn("SC.expandColor is deprecated. Please use SC.Color.from instead.");
     // @endif
     var i=0, color = '#', match, part;
