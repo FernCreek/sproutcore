@@ -636,6 +636,7 @@ SC.SegmentedView = SC.View.extend(SC.Control,
 
     // This variable is useful to optimize when we are overflowing
     this.isOverflowing = NO;
+    this._firstOverflowTabIndex = -1;
     overflowView.set('isSelected', NO);
 
     // Clear out the overflow items (these are the items not currently visible)
@@ -654,6 +655,9 @@ SC.SegmentedView = SC.View.extend(SC.Control,
         this.overflowItems.pushObject(childView.get('localItem'));
 
         // Record that we're now overflowing
+        if (!this.isOverflowing) {
+          this._firstOverflowTabIndex = i;
+        }
         this.isOverflowing = YES;
 
         childView.set('isVisible', NO);
@@ -871,8 +875,17 @@ SC.SegmentedView = SC.View.extend(SC.Control,
       this.activeChildView = childView;
 
       // if mouse was pressed on the overflow segment, popup the menu
-      if (index === overflowIndex) this.showOverflowMenu();
-      else this._isMouseDown = YES;
+      if (index === overflowIndex) {
+        this.showOverflowMenu();
+      } else {
+        this.mouseDownInfo = {
+          event:        evt,
+          itemView:     childView,
+          contentIndex: index,
+          at:           Date.now()
+        };
+        this._isMouseDown = YES;
+      }
     }
 
     return YES;
@@ -896,8 +909,26 @@ SC.SegmentedView = SC.View.extend(SC.Control,
       }
     }
 
+    if (this.mouseDownInfo) {
+      this._cleanupMouseDown();
+    }
+
     this._isMouseDown = NO;
     return YES;
+  },
+
+  /** @private */
+  _cleanupMouseDown: function() {
+
+    // delete items explicitly to avoid leaks on IE
+    var info = this.mouseDownInfo, key;
+    if (info) {
+      for(key in info) {
+        if (!info.hasOwnProperty(key)) continue;
+        delete info[key];
+      }
+    }
+    this.mouseDownInfo = null;
   },
 
   /** @private */
