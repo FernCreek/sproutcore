@@ -30,6 +30,12 @@ SC.mixin({
   suppressMain: SC.suppressMain ? YES : NO,
 
   /**
+   * Controls if the loading content will be automatically removed once the document is ready.
+   * @type {boolean}
+   */
+  autoRemoveLoading: true,
+
+  /**
     Add the passed target and method to the queue of methods to invoke when
     the document is ready.  These methods will be called after the document
     has loaded and parsed, but before the main() function is called.
@@ -78,7 +84,9 @@ SC.mixin({
 
       jQuery("html").attr("lang", loc);
 
-      jQuery("#loading").remove();
+      if (SC.autoRemoveLoading) {
+        jQuery("#loading").remove();
+      }
 
       var queue = SC._readyQueue, idx, len;
 
