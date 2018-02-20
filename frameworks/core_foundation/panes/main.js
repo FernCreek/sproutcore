@@ -60,7 +60,7 @@ SC.MainPane = SC.Pane.extend({
     var ret = sc_super(),
         responder = this.rootResponder;
     responder.makeMainPane(this);
-    if (!responder.get('keyRootView')) responder.makeKeyPane(this);
+    if (!responder.get('keyPane')) responder.makeKeyPane(this);
     return ret ;
   },
 
