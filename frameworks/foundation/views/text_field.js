@@ -726,8 +726,10 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
           elem = input[0],
           val = this.get('value');
 
-      if (hintOnFocus) this.$('.hint')[0].innerHTML = hint;
-      else if (!hintOnFocus) elem.placeholder = hint;
+      if (hintOnFocus) {
+        let foundHint = this.$('.hint');
+        if (foundHint.length) foundHint[0].innerHTML = hint;
+      } else if (!hintOnFocus) elem.placeholder = hint;
 
       input.attr('maxLength', maxLength);
 
