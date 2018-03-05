@@ -724,10 +724,10 @@ SC.TextFieldView = SC.FieldView.extend(SC.StaticLayout, SC.Editable,
     else {
       var input= this.$input(),
           elem = input[0],
-          val = this.get('value');
+          val = this.get('value'), foundHint = null;
 
       if (hintOnFocus) {
-        let foundHint = this.$('.hint');
+        foundHint = this.$('.hint');
         if (foundHint.length) foundHint[0].innerHTML = hint;
       } else if (!hintOnFocus) elem.placeholder = hint;
 
