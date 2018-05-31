@@ -371,7 +371,7 @@ SC.PickerPane = SC.PalettePane.extend(
   */
   popup: function(anchorViewOrElement, preferType, preferMatrix, pointerOffset) {
     this.set('anchorElement', anchorViewOrElement);
-    if (anchorViewOrElement && !anchorViewOrElement.isView) {
+    if (anchorViewOrElement && anchorViewOrElement.isView) {
       this._setupScrollObservers(anchorViewOrElement);
     }
 
